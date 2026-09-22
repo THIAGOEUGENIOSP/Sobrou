@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-tinta: #0b1220;
+  --color-tinta-suave: #64748b;
+  --color-papel: #ffffff;
+  --color-papel-suave: #f5f7fa;
+  --color-borda: #e3e8ef;
+  --color-marca: #0f766e;
+  --color-marca-forte: #115e59;
+  --color-alerta: #b91c1c;
+  --color-positivo: #15803d;
+  --radius-cartao: 1rem;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-tinta: #e8edf5;
+    --color-tinta-suave: #94a3b8;
+    --color-papel: #0b1220;
+    --color-papel-suave: #121a2b;
+    --color-borda: #1e293b;
+    --color-marca: #2dd4bf;
+    --color-marca-forte: #14b8a6;
+    --color-alerta: #f87171;
+    --color-positivo: #4ade80;
+  }
+}
+
+html,
+body {
+  background: var(--color-papel);
+  color: var(--color-tinta);
+}
+
+body {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Alvos de toque grandes: o motorista usa isto de pé, com pressa. */
+button,
+a[role='button'] {
+  min-height: 44px;
+}
+
+/* Números financeiros alinham melhor com dígitos de largura fixa. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

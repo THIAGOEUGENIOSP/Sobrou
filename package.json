@@ -1,0 +1,20 @@
+{
+  "name": "kmlegal",
+  "private": true,
+  "version": "0.1.0",
+  "description": "KM Legal — controle financeiro e rentabilidade para motoristas de aplicativo",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace @kmlegal/finance",
+    "test:watch": "npm run test:watch --workspace @kmlegal/finance",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev": "npm run dev --workspace @kmlegal/web",
+    "build": "npm run build --workspace @kmlegal/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

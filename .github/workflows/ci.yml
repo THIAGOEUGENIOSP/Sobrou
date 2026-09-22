@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    name: Testes, tipos e build
+    runs-on: ubuntu-latest
+
+    env:
+      # O build do Next precisa das variáveis públicas; usamos valores de
+      # fachada porque a CI não acessa o banco.
+      NEXT_PUBLIC_SUPABASE_URL: https://exemplo.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_0000000000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # As fórmulas financeiras são o coração do produto: se um teste quebra,
+      # nada mais importa.
+      - name: Testes das fórmulas
+        run: npm test
+
+      - name: Verificação de tipos
+        run: npm run typecheck
+
+      - name: Build do app
+        run: npm run build
