@@ -6,13 +6,13 @@ import {
   formatMoney,
   formatRate,
   safeDiv,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Reservas — KM Legal' };
+export const metadata = { title: 'Reservas — Sobrou' };
 
 const ORIGEM: Record<string, string> = {
   shift: 'Fechamento do turno',

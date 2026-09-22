@@ -54,7 +54,7 @@ export default function EntrarPage() {
   return (
     <main className="mx-auto w-full max-w-sm px-4 py-12">
       <Link href="/" className="text-sm text-[var(--color-marca)]">
-        ← KM Legal
+        ← Sobrou
       </Link>
       <h1 className="mt-6 mb-6 text-2xl font-bold">Entrar</h1>
       <Suspense fallback={null}>

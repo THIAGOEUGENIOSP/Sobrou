@@ -1,7 +1,7 @@
 import { minutesToHours, money, roundTo, safeDiv } from './money';
 
 /**
- * Analisador de corridas (seção 11) — o núcleo do KM Legal.
+ * Analisador de corridas (seção 11) — o núcleo do Sobrou.
  *
  * A pergunta é sempre a mesma: esta corrida paga o que ela custa? A resposta
  * usa o custo por km do próprio veículo, e não um palpite. O deslocamento até

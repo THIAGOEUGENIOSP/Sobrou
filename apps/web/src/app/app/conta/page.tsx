@@ -3,7 +3,7 @@ import { PainelConta } from './painel';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Conta e privacidade — KM Legal' };
+export const metadata = { title: 'Conta e privacidade — Sobrou' };
 
 export default async function ContaPage() {
   const user = await requireUser();

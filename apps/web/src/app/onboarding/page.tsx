@@ -5,7 +5,7 @@ import { FormularioOnboarding } from './formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Primeiros passos — KM Legal' };
+export const metadata = { title: 'Primeiros passos — Sobrou' };
 
 export default async function OnboardingPage() {
   const supabase = await createClient();

@@ -62,6 +62,23 @@ export async function requireUser() {
 }
 
 /**
+ * Cliente sem sessão, para a sincronização do app Android.
+ *
+ * Deliberadamente não lê cookie. A rota do aparelho se identifica por token e
+ * só chama as duas funções `dispositivo_*`; se ela usasse o cliente de
+ * sessão, uma requisição que por acaso trouxesse o cookie de um navegador
+ * logado passaria a agir como aquele usuário — e o token deixaria de ser o
+ * que manda. Sem cookie, o token é a única credencial possível.
+ */
+export function createAnonClient() {
+  return createRawClient<Database>(
+    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
+    publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
+}
+
+/**
  * Cliente administrativo, que IGNORA a RLS.
  *
  * Uso restrito: webhook de pagamento (escrever em `subscriptions`) e tarefas

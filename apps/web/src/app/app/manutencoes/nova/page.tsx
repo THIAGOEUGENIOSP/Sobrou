@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { formatMoney } from '@kmlegal/finance';
+import { formatMoney } from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
 import { dataLocal } from '@/lib/numeros';
@@ -8,7 +8,7 @@ import { FormularioManutencao } from './formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Nova manutenção — KM Legal' };
+export const metadata = { title: 'Nova manutenção — Sobrou' };
 
 export default async function NovaManutencaoPage() {
   const ctx = await carregarContexto();

@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import type { AllocationConfig } from '@kmlegal/finance';
+import type { AllocationConfig } from '@sobrou/finance';
 import { salvarAjustes, salvarPercentuais } from '@/lib/ajustes/actions';
 import { Aviso, BotaoEnviar } from '@/components/formulario';
 

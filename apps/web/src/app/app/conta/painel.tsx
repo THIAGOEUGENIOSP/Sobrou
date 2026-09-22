@@ -22,7 +22,7 @@ export function PainelConta({ email }: { email: string }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `kmlegal-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `sobrou-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     });
@@ -33,7 +33,7 @@ export function PainelConta({ email }: { email: string }) {
       <section className="mb-8">
         <h2 className="mb-1 font-semibold">Exportar meus dados</h2>
         <p className="mb-3 text-sm text-[var(--color-tinta-suave)]">
-          Baixa tudo o que o KM Legal guarda sobre você em um arquivo JSON: veículos,
+          Baixa tudo o que o Sobrou guarda sobre você em um arquivo JSON: veículos,
           abastecimentos, turnos, lançamentos, manutenções e reservas.
         </p>
         {erroExport && <Aviso tipo="erro">{erroExport}</Aviso>}

@@ -7,7 +7,7 @@ import {
   type AllocationConfig,
   type FuelEntry,
   type FuelKind,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import type { Tables } from '@/lib/supabase/database.types';
 

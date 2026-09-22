@@ -1,18 +1,18 @@
 {
-  "name": "kmlegal",
+  "name": "sobrou",
   "private": true,
   "version": "0.1.0",
-  "description": "KM Legal — controle financeiro e rentabilidade para motoristas de aplicativo",
+  "description": "Sobrou — controle financeiro e rentabilidade para motoristas de aplicativo",
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test --workspace @kmlegal/finance",
-    "test:watch": "npm run test:watch --workspace @kmlegal/finance",
+    "test": "npm run test --workspace @sobrou/finance",
+    "test:watch": "npm run test:watch --workspace @sobrou/finance",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "dev": "npm run dev --workspace @kmlegal/web",
-    "build": "npm run build --workspace @kmlegal/web"
+    "dev": "npm run dev --workspace @sobrou/web",
+    "build": "npm run build --workspace @sobrou/web"
   },
   "engines": {
     "node": ">=20"

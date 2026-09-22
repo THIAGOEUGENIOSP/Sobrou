@@ -1,4 +1,4 @@
-import { formatMoney, formatNumber } from '@kmlegal/finance';
+import { formatMoney, formatNumber } from '@sobrou/finance';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';

@@ -1,5 +1,5 @@
 /**
- * Service worker do KM Legal.
+ * Service worker do Sobrou.
  *
  * O que ele faz: deixa o app abrir sem rede, servindo a casca (CSS, JS,
  * ícones) do cache e uma página de aviso quando o motorista está numa área
@@ -16,7 +16,7 @@
  * pela metade ela perde lançamento — que é pior do que não ter.
  */
 
-const VERSAO = 'kmlegal-v1';
+const VERSAO = 'sobrou-v2';
 const CASCA = `${VERSAO}-casca`;
 const ESTATICOS = `${VERSAO}-estaticos`;
 

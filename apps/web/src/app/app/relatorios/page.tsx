@@ -10,7 +10,7 @@ import {
   formatRate,
   formatVariacao,
   type Comparacao,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { carregarPeriodo } from '@/lib/relatorios/dados';
 import { resolverPeriodoDoUsuario, type ChavePeriodo } from '@/lib/relatorios/periodo';
@@ -20,7 +20,7 @@ import { BotoesExportar } from './exportar';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Relatórios — KM Legal' };
+export const metadata = { title: 'Relatórios — Sobrou' };
 
 export default async function RelatoriosPage({
   searchParams,

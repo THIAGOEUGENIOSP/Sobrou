@@ -1,16 +1,16 @@
 import Link from 'next/link';
-import { consumoReal, precoReferencia } from '@kmlegal/finance';
+import { consumoReal, precoReferencia } from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { Comparador } from './comparador';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Etanol × gasolina — KM Legal' };
+export const metadata = { title: 'Etanol × gasolina — Sobrou' };
 
 /**
  * Comparador de combustível (seção 16).
  *
- * A regra dos 70% é um atalho que serve para "um carro médio". O KM Legal já
+ * A regra dos 70% é um atalho que serve para "um carro médio". O Sobrou já
  * sabe o consumo real DESTE carro em cada combustível, então compara custo por
  * km de verdade — e mostra qual é a paridade do carro do motorista.
  */

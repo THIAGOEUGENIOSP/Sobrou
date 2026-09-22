@@ -10,7 +10,7 @@ import {
   formatMoney,
   formatRate,
   type AllocationConfig,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { finalizarTurno } from '@/lib/turnos/actions';
 import { lerNumeroBR } from '@/lib/numeros';
 import { Aviso, BotaoEnviar, Campo } from '@/components/formulario';

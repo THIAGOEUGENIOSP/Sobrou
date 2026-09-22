@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { rotaInterna } from '@/lib/rotas';
 import {
   cadastroSchema,
   erroDeZod,
@@ -53,8 +54,7 @@ export async function entrar(_estado: FormState, formData: FormData): Promise<Fo
 
   if (error) return { erro: traduzir(error.message) };
 
-  const destino = parsed.data.proximo?.startsWith('/') ? parsed.data.proximo : '/app';
-  redirect(destino);
+  redirect(rotaInterna(parsed.data.proximo));
 }
 
 export async function cadastrar(_estado: FormState, formData: FormData): Promise<FormState> {

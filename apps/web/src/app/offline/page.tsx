@@ -1,4 +1,4 @@
-export const metadata = { title: 'Sem conexão — KM Legal' };
+export const metadata = { title: 'Sem conexão — Sobrou' };
 
 /**
  * Página servida pelo service worker quando não há rede.
@@ -11,7 +11,7 @@ export default function OfflinePage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-4 py-12 text-center">
       <h1 className="mb-2 text-2xl font-bold">Sem conexão</h1>
       <p className="mb-6 text-[var(--color-tinta-suave)]">
-        Você está numa área sem sinal. O KM Legal precisa de internet para salvar seus
+        Você está numa área sem sinal. O Sobrou precisa de internet para salvar seus
         lançamentos — assim que a rede voltar, é só recarregar.
       </p>
 

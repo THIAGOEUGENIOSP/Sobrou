@@ -1,4 +1,4 @@
-import { formatMoney, formatPercent, formatRate } from '@kmlegal/finance';
+import { formatMoney, formatPercent, formatRate } from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { carregarMetas, ROTULOS_META, type MetaComProgresso } from '@/lib/metas/dados';
 import { can } from '@/lib/entitlements';
@@ -7,7 +7,7 @@ import { FormularioMeta } from './formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Metas — KM Legal' };
+export const metadata = { title: 'Metas — Sobrou' };
 
 export default async function MetasPage() {
   const ctx = await carregarContexto();

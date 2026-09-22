@@ -3,11 +3,11 @@ import './globals.css';
 import { RegistrarServiceWorker } from '@/components/registrar-sw';
 
 export const metadata: Metadata = {
-  title: 'KM Legal — quanto você realmente ganhou hoje',
+  title: 'Sobrou — quanto você realmente ganhou hoje',
   description:
     'Controle de abastecimento, turnos, custos e reservas para motorista de aplicativo. Descubra o que sobra de verdade depois do combustível e do desgaste do carro.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'KM Legal' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Sobrou' },
   // O iOS ignora o manifest: precisa do ícone declarado aqui.
   icons: {
     icon: '/favicon.ico',

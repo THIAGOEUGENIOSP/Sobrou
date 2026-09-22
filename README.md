@@ -1,18 +1,25 @@
-# KM Legal
+# Sobrou
+
+**Faturou não é sobrou.**
 
 Controle financeiro e análise de rentabilidade para motorista de aplicativo.
 
-A pergunta que o app existe para responder: **quanto você realmente ganhou hoje?**
-Faturamento não é lucro. O KM Legal desconta o combustível pelo preço que você
-pagou de verdade na bomba, separa a reserva do carro e mostra o que sobra.
+No fim do dia o app do motorista mostra quanto entrou; não mostra quanto ficou.
+O Sobrou desconta o combustível pelo preço que você pagou de verdade na bomba,
+separa a reserva do carro e mostra o que sobra.
+
+Chamava-se KM Legal até setembro de 2026. O nome antigo descrevia o carro, e
+"legal" puxava a leitura jurídica — multa, CNH, processo — num app que fala de
+dinheiro. `kmlegal.vercel.app` continua respondendo para não quebrar quem já
+tinha instalado.
 
 ---
 
 ## Como está organizado
 
 ```
-kmlegal/
-├── packages/finance/     # Fórmulas financeiras. TypeScript puro, 124 testes.
+sobrou/
+├── packages/finance/     # Fórmulas financeiras. TypeScript puro, 149 testes.
 └── apps/web/             # Next.js 15 (App Router) + Supabase + PWA
     └── src/
         ├── app/          # Rotas
@@ -27,7 +34,7 @@ kmlegal/
 ### A regra que sustenta o resto
 
 Nenhuma tela, rota ou relatório calcula indicador por conta própria. **Tudo passa
-por `@kmlegal/finance`.** É o que impede o dashboard e o relatório mensal de
+por `@sobrou/finance`.** É o que impede o dashboard e o relatório mensal de
 mostrarem números diferentes para o mesmo dia.
 
 O pacote não depende de React, Next nem Supabase — por isso dá para testá-lo
@@ -216,6 +223,55 @@ dias. Para produção de verdade, ligar o **Point-in-Time Recovery** no painel
 (Database → Backups) — ele permite voltar a base a qualquer instante, e não só
 ao último backup da noite. As migrations em `supabase_migrations.schema_migrations`
 reconstroem o schema do zero; o PITR é o que salva os dados.
+
+### Integração com o KM Legal (app Android)
+
+O KM Legal é o app nativo que lê a oferta na tela da Uber por acessibilidade e
+mostra o card flutuante. Ele faz a única coisa que o Sobrou nunca vai fazer:
+navegador não enxerga a tela de outro aplicativo. Os dois se ligam por um
+**token de aparelho**, gerado em `/app/ajustes/dispositivos`.
+
+A troca vale nos dois sentidos, e o lado de volta é o que importa mais:
+
+- **Sobe**: cada corrida avaliada vira linha em `ride_evaluations` e entra nos
+  relatórios junto com o resto.
+- **Desce**: o custo por km sai dos abastecimentos reais. Sozinho, o KM Legal
+  decide com um número que o motorista digitou uma vez e que envelhece —
+  combustível muda de preço, o consumo do folheto não é o consumo de quem roda
+  em São Paulo, e a depreciação foi chute.
+
+| Rota                           | O que faz                                  |
+| ------------------------------ | ------------------------------------------ |
+| `GET /api/dispositivo/parametros` | custo por km, regras e origem do número |
+| `POST /api/dispositivo/corridas`  | lote de até 50 corridas avaliadas       |
+
+Decisões que sustentam isso:
+
+- **O veredito é recalculado no servidor.** O app já respondeu ao motorista em
+  três segundos, porque a corrida expira — mas o que fica gravado é o que o
+  servidor calcula, com as regras e o custo de agora. Guardar o julgamento do
+  cliente deixaria o histórico sem valor de prova, justo o histórico que vai
+  responder daqui a três meses se as regras estavam boas.
+- **A conta continua num lugar só.** As funções `dispositivo_*` do banco
+  buscam linhas; quem calcula é `@sobrou/finance`, a mesma que a tela usa.
+  Reescrever a fórmula em SQL para atender o celular seria o começo de o app e
+  o site discordarem sobre a mesma corrida.
+- **O token guarda só o hash.** SHA-256, calculado na aplicação — o valor cru
+  nunca vira parâmetro de query, então não aparece em log nem em backup. Ele
+  aparece uma vez na tela e não volta. Token que o servidor relê é token que
+  vaza junto com o banco.
+- **O que o token abre é minúsculo**: ler o próprio custo e gravar corrida.
+  Não abre faturamento, não mexe em reserva, não apaga e não entra pelo
+  navegador. Celular se perde; revogar um aparelho não afeta os outros nem
+  exige trocar senha.
+- **Cota de 300 corridas por hora**, presa à conta e não ao aparelho, dentro
+  da própria função de gravação — não dá para chamar a escrita sem passar por
+  ela.
+
+Ensaiado no banco: token de B não lê nem escreve na conta de A; token revogado
+e token inexistente respondem igual, para quem sonda não descobrir se acertou
+uma conta; usuário logado não forja nem revoga token alheio; `anon` não lê
+`device_tokens`; a cota cortou exatamente na 301ª corrida.
 
 ### O administrador não vê dinheiro de ninguém
 

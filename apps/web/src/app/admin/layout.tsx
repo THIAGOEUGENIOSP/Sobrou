@@ -4,7 +4,7 @@ import { BotaoSair } from '@/components/botao-sair';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Administração — KM Legal' };
+export const metadata = { title: 'Administração — Sobrou' };
 
 /**
  * Área administrativa, separada do app do motorista.
@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col px-4 pt-6 pb-10">
       <header className="mb-6 flex items-center justify-between gap-3">
         <Link href="/admin" className="font-bold">
-          KM Legal <span className="text-[var(--color-tinta-suave)]">admin</span>
+          Sobrou <span className="text-[var(--color-tinta-suave)]">admin</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/app" className="text-[var(--color-tinta-suave)]">

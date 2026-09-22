@@ -6,7 +6,7 @@ import { FormularioFecharTurno } from './formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Finalizar turno — KM Legal' };
+export const metadata = { title: 'Finalizar turno — Sobrou' };
 
 export default async function FecharTurnoPage() {
   const ctx = await carregarContexto();

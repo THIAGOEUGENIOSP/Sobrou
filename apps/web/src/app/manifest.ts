@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next';
 /** Manifest da PWA: o app instala na tela inicial do celular. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'KM Legal',
-    short_name: 'KM Legal',
+    name: 'Sobrou',
+    short_name: 'Sobrou',
     description: 'Rentabilidade real para motorista de aplicativo.',
     start_url: '/app',
     display: 'standalone',

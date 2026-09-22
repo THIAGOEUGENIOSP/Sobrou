@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { compararCombustiveis, formatConsumo, formatNumber, formatRate } from '@kmlegal/finance';
+import { compararCombustiveis, formatConsumo, formatNumber, formatRate } from '@sobrou/finance';
 import { lerNumeroBR } from '@/lib/numeros';
 
 function texto(v: number | null): string {

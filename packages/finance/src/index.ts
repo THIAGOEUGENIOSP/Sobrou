@@ -1,5 +1,5 @@
 /**
- * @kmlegal/finance — todas as fórmulas financeiras do KM Legal.
+ * @sobrou/finance — todas as fórmulas financeiras do Sobrou.
  *
  * Regra do projeto: nenhuma tela, rota ou relatório calcula indicador por
  * conta própria. Tudo passa por aqui. É o que impede o dashboard e o

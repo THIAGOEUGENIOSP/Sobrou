@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { agregarPeriodo, type PeriodTotals, type ShiftSnapshot } from '@kmlegal/finance';
+import { agregarPeriodo, type PeriodTotals, type ShiftSnapshot } from '@sobrou/finance';
 import { createClient } from '@/lib/supabase/server';
 import { historyFloor } from '@/lib/entitlements';
 

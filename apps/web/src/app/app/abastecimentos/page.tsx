@@ -8,14 +8,14 @@ import {
   formatMoney,
   formatRate,
   precoReferencia,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { carregarContexto, paraFuelEntry } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
 import { historyFloor } from '@/lib/entitlements';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Abastecimentos — KM Legal' };
+export const metadata = { title: 'Abastecimentos — Sobrou' };
 
 const NOME_COMBUSTIVEL: Record<string, string> = {
   etanol: 'Etanol',

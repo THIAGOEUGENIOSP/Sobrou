@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { fecharTurno, type ShiftRevenue } from '@kmlegal/finance';
+import { fecharTurno, type ShiftRevenue } from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
@@ -108,8 +108,7 @@ export async function lancarTransacao(
   revalidatePath('/app');
   revalidatePath('/app/turno');
 
-  const destino = parsed.data.shift_id ? '/app/turno' : '/app';
-  redirect(destino);
+  redirect(parsed.data.shift_id ? '/app/turno' : '/app');
 }
 
 export async function excluirTransacao(formData: FormData): Promise<void> {
@@ -158,6 +157,16 @@ export async function finalizarTurno(
     .maybeSingle();
 
   if (!turno) return { erro: 'Turno não encontrado.' };
+
+  // Todo usuário ganha uma configuração de percentuais no cadastro, então
+  // isto não deveria acontecer. Se acontecer, parar é melhor que fechar: o
+  // turno guardaria o resultado sem registrar QUAIS percentuais o produziram,
+  // e é justamente esse ponteiro que impede o passado de ser reescrito quando
+  // o motorista mudar a divisão amanhã.
+  if (!ctx.allocationId) {
+    return { erro: 'Configure a divisão do resultado em Ajustes antes de fechar o turno.' };
+  }
+
   if (parsed.data.odo_final < Number(turno.odo_inicial)) {
     return {
       campos: { odo_final: 'O hodômetro final não pode ser menor que o de início.' },

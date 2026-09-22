@@ -19,7 +19,7 @@ export default function Erro({
   useEffect(() => {
     // Em produção a mensagem já vem redigida pelo Next; o console é só para
     // o desenvolvimento.
-    console.error('[KM Legal]', error.digest ?? error.message);
+    console.error('[Sobrou]', error.digest ?? error.message);
   }, [error]);
 
   return (

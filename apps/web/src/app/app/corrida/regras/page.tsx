@@ -5,7 +5,7 @@ import { FormularioRegras } from './formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Minhas regras — KM Legal' };
+export const metadata = { title: 'Minhas regras — Sobrou' };
 
 export default async function RegrasPage() {
   const podeUsar = await can('ride_analyzer');

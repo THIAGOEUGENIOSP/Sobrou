@@ -7,7 +7,7 @@ import { FormularioAbastecimento } from '../formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Novo abastecimento — KM Legal' };
+export const metadata = { title: 'Novo abastecimento — Sobrou' };
 
 /**
  * Formulário pré-preenchido com o último abastecimento (seção 24).

@@ -23,6 +23,17 @@ function ehPublica(pathname: string): boolean {
 }
 
 /**
+ * Rotas que se autenticam por token de aparelho, não por cookie.
+ *
+ * O app Android não tem sessão de navegador — é para isso que o token existe.
+ * Sem esta exceção o middleware responderia um 302 para `/entrar`, e o app
+ * receberia a página HTML de login achando que era a resposta da API.
+ */
+function ehRotaDeAparelho(pathname: string): boolean {
+  return pathname === '/api/dispositivo' || pathname.startsWith('/api/dispositivo/');
+}
+
+/**
  * Renova a sessão a cada requisição e barra rota protegida sem login.
  *
  * Isso é conveniência e primeira barreira, não a autorização de verdade:
@@ -30,6 +41,12 @@ function ehPublica(pathname: string): boolean {
  * middleware tiver um bug.
  */
 export async function updateSession(request: NextRequest) {
+  // A rota do aparelho passa reto: ela confere o token sozinha, e nem o
+  // cookie de um navegador logado no mesmo domínio deve influenciar nela.
+  if (ehRotaDeAparelho(request.nextUrl.pathname)) {
+    return NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(

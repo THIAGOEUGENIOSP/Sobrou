@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { rotaInterna } from '@/lib/rotas';
 
 /**
  * Destino dos links de e-mail: confirmação de cadastro e recuperação de senha.
@@ -8,10 +9,8 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get('code');
-  const proximoParam = searchParams.get('proximo');
-  // Só aceita caminho interno: `proximo=https://site-falso` viraria um
-  // redirecionamento aberto, prato cheio para phishing.
-  const proximo = proximoParam?.startsWith('/') ? proximoParam : '/app';
+  // Só aceita caminho interno — ver `rotaInterna`.
+  const proximo = rotaInterna(searchParams.get('proximo'));
 
   if (!code) {
     return NextResponse.redirect(`${origin}/entrar?erro=link_invalido`);

@@ -3,14 +3,14 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { avaliarCorrida, type RideEvaluation, type RideRules } from '@kmlegal/finance';
+import { avaliarCorrida, type RideEvaluation, type RideRules } from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { PlanoInsuficienteError, requireFeature } from '@/lib/entitlements';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
 import { numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
 
 /**
- * Analisador de corridas (seção 11) — o núcleo do KM Legal.
+ * Analisador de corridas (seção 11) — o núcleo do Sobrou.
  *
  * A avaliação roda no cliente enquanto o motorista digita, porque ele precisa
  * da resposta em três segundos, antes de a corrida expirar. O servidor

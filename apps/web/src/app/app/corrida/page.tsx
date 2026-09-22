@@ -1,19 +1,15 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import {
-  custoTotalPorKm,
-  formatMoney,
-  formatRate,
-  type RideRules,
-} from '@kmlegal/finance';
-import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
+import { formatMoney, formatRate, type RideRules } from '@sobrou/finance';
+import { carregarContexto } from '@/lib/dados/contexto';
+import { baseDeCusto, regrasDaLinha } from '@/lib/corridas/custo';
 import { createClient } from '@/lib/supabase/server';
 import { can } from '@/lib/entitlements';
 import { Analisador } from './analisador';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Vale a pena? — KM Legal' };
+export const metadata = { title: 'Vale a pena? — Sobrou' };
 
 export default async function CorridaPage() {
   const podeUsar = await can('ride_analyzer');
@@ -48,11 +44,6 @@ export default async function CorridaPage() {
     .order('evaluated_at', { ascending: false })
     .limit(5);
 
-  // O custo por km sai do combustível medido mais o desgaste do veículo.
-  const parametros = parametrosDoTurno(ctx);
-  const combustivelPorKm =
-    parametros.preco > 0 && parametros.consumo > 0 ? parametros.preco / parametros.consumo : null;
-
   const doze = new Date();
   doze.setMonth(doze.getMonth() - 12);
 
@@ -67,36 +58,20 @@ export default async function CorridaPage() {
     .eq('status', 'fechado')
     .gte('work_date', doze.toISOString().slice(0, 10));
 
-  const breakdown = ctx.veiculo
-    ? custoTotalPorKm({
-        combustivelPorKm,
-        basis: {
-          valorCompra: ctx.veiculo.valor_compra,
-          valorResidualEstimado: ctx.veiculo.valor_residual_est,
-          vidaUtilKm: ctx.veiculo.vida_util_km,
-          seguroMensal: ctx.veiculo.seguro_mensal,
-          custosFixosMensais: ctx.veiculo.custos_fixos_mensais,
-          kmMedioMensal: ctx.veiculo.km_medio_mensal,
-          manutencaoKmEstimada: ctx.veiculo.manutencao_km_estimada,
-        },
-        totalManutencoes12m: (manutencoes ?? []).reduce((a, m) => a + Number(m.valor), 0),
-        kmRodados12m: (turnos ?? []).reduce((a, t) => a + Number(t.snap_km ?? 0), 0),
-      })
-    : null;
+  // A mesma função que a rota do app Android usa: o card flutuante no celular
+  // e esta tela precisam responder o mesmo número para a mesma corrida.
+  const custo = baseDeCusto({
+    veiculo: ctx.veiculo,
+    settings: ctx.settings,
+    abastecimentos: ctx.abastecimentos,
+    totalManutencoes12m: (manutencoes ?? []).reduce((a, m) => a + Number(m.valor), 0),
+    kmRodados12m: (turnos ?? []).reduce((a, t) => a + Number(t.snap_km ?? 0), 0),
+  });
 
-  const usarTotal = (ctx.settings?.ride_cost_basis ?? 'total') === 'total';
-  const custoPorKm = usarTotal ? (breakdown?.total ?? combustivelPorKm) : combustivelPorKm;
+  const usarTotal = custo.base === 'total';
+  const custoPorKm = custo.custoPorKm;
 
-  const regrasAtuais: RideRules = regras
-    ? {
-        valorMin: regras.valor_min,
-        rsKmMin: regras.rs_km_min,
-        rsHoraMin: regras.rs_hora_min,
-        distMaxBusca: regras.dist_max_busca,
-        notaMin: regras.nota_min,
-        margemMin: regras.margem_min,
-      }
-    : {};
+  const regrasAtuais: RideRules = regrasDaLinha(regras);
 
   const semRegras = Object.values(regrasAtuais).every((v) => v == null);
 

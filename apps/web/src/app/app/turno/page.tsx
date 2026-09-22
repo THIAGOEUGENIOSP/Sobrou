@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { formatConsumo, formatMoney, formatRate } from '@kmlegal/finance';
+import { formatConsumo, formatMoney, formatRate } from '@sobrou/finance';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
 import { cancelarTurno, excluirTransacao } from '@/lib/turnos/actions';
@@ -9,7 +9,7 @@ import { Cronometro } from './cronometro';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Turno — KM Legal' };
+export const metadata = { title: 'Turno — Sobrou' };
 
 export default async function TurnoPage() {
   const ctx = await carregarContexto();

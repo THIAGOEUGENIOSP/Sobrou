@@ -5,10 +5,11 @@ soltos no repositório sem ninguém lembrar de onde vieram.
 
 Uso: python3 scripts/gerar-icones.py
 
-A marca é um ponteiro de velocímetro sobre o arco: o app existe para dizer se o
-km rodado compensa. O ícone "mascarável" tem margem extra porque o Android
-recorta o ícone em círculo, losango ou squircle conforme o aparelho — sem essa
-folga, o desenho aparece cortado.
+A marca é um ponteiro de velocímetro com "R$" na abertura do arco: o giro do
+carro de um lado, o dinheiro do outro, que é exatamente a conta que o app faz.
+O ícone "mascarável" tem margem extra porque o Android recorta o ícone em
+círculo, losango ou squircle conforme o aparelho — sem essa folga, o desenho
+aparece cortado.
 """
 
 import math
@@ -64,9 +65,9 @@ def desenhar(tamanho: int, margem_rel: float, cantos: bool) -> Image.Image:
     bolinha = lado * 0.035
     d.ellipse([cx - bolinha, cy - bolinha, cx + bolinha, cy + bolinha], fill=TEXTO)
 
-    # "KM" abaixo do centro, dentro da abertura do arco.
+    # "R$" abaixo do centro, dentro da abertura do arco.
     f = fonte(int(lado * 0.17))
-    texto = "KM"
+    texto = "R$"
     esq, topo, dir_, base = d.textbbox((0, 0), texto, font=f)
     d.text(
         (cx - (dir_ - esq) / 2 - esq, cy + lado * 0.14 - topo),

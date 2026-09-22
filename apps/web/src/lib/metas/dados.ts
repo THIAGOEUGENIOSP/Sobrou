@@ -6,7 +6,7 @@ import {
   ritmoNecessario,
   semanaAtual,
   type ProgressoMeta,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { carregarPeriodo } from '@/lib/relatorios/dados';
 import { createClient } from '@/lib/supabase/server';
 import { dataLocal } from '@/lib/numeros';

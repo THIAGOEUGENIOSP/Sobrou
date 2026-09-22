@@ -5,7 +5,7 @@ import { FormularioLancamento } from './formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Novo lançamento — KM Legal' };
+export const metadata = { title: 'Novo lançamento — Sobrou' };
 
 export default async function NovoLancamentoPage() {
   const ctx = await carregarContexto();

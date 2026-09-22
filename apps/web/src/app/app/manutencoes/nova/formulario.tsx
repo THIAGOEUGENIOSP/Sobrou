@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { formatMoney } from '@kmlegal/finance';
+import { formatMoney } from '@sobrou/finance';
 import { salvarManutencao } from '@/lib/manutencoes/actions';
 import { lerNumeroBR } from '@/lib/numeros';
 import { Aviso, BotaoEnviar, Campo } from '@/components/formulario';

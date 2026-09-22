@@ -3,10 +3,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // O pacote de fórmulas é TypeScript puro no workspace: o Next precisa compilá-lo.
-  transpilePackages: ['@kmlegal/finance'],
-  experimental: {
-    typedRoutes: true,
-  },
+  transpilePackages: ['@sobrou/finance'],
+  typedRoutes: true,
   async headers() {
     return [
       {

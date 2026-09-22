@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export const metadata = { title: 'Página não encontrada — KM Legal' };
+export const metadata = { title: 'Página não encontrada — Sobrou' };
 
 export default function NaoEncontrada() {
   return (

@@ -8,12 +8,12 @@ import {
   formatMoney,
   formatRate,
   type ShiftSnapshot,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Meu dia — KM Legal' };
+export const metadata = { title: 'Meu dia — Sobrou' };
 
 function Cartao({
   titulo,

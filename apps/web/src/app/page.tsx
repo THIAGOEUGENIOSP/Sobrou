@@ -20,15 +20,15 @@ export default async function Home() {
     <main className="mx-auto w-full max-w-3xl px-4 py-12 sm:py-20">
       <header className="mb-12">
         <p className="text-sm font-semibold tracking-wide text-[var(--color-marca)] uppercase">
-          KM Legal
+          Sobrou
         </p>
         <h1 className="mt-3 text-3xl leading-tight font-bold sm:text-5xl">
-          Quanto você <em className="not-italic text-[var(--color-marca)]">realmente</em> ganhou
-          hoje?
+          Faturou não é <em className="not-italic text-[var(--color-marca)]">sobrou</em>.
         </h1>
         <p className="mt-4 max-w-xl text-lg text-[var(--color-tinta-suave)]">
-          Faturamento não é lucro. O KM Legal desconta o combustível pelo preço que você pagou de
-          verdade, separa a reserva do carro e mostra o que sobra para você.
+          No fim do dia o app do motorista mostra quanto entrou. Não mostra quanto ficou. O Sobrou
+          desconta o combustível pelo preço que você pagou de verdade na bomba, separa a reserva do
+          carro e diz o número que importa: o que sobrou para você.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">

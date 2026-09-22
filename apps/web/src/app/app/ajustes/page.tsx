@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { can } from '@/lib/entitlements';
 import { CARDS_DISPONIVEIS } from '@/lib/ajustes/cards';
@@ -5,7 +6,7 @@ import { FormularioAjustes, FormularioPercentuais } from './formularios';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Ajustes — KM Legal' };
+export const metadata = { title: 'Ajustes — Sobrou' };
 
 export default async function AjustesPage() {
   const ctx = await carregarContexto();
@@ -43,6 +44,20 @@ export default async function AjustesPage() {
           }))}
           podePersonalizar={podePersonalizar}
         />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-1 font-semibold">Aparelhos conectados</h2>
+        <p className="mb-4 text-sm text-[var(--color-tinta-suave)]">
+          O KM Legal, que lê a tela da Uber no celular, manda as corridas para cá e usa o seu custo
+          por km real em vez do valor digitado no cadastro dele.
+        </p>
+        <Link
+          href="/app/ajustes/dispositivos"
+          className="inline-flex rounded-full border border-[var(--color-borda)] px-5 py-2.5 font-semibold"
+        >
+          Gerenciar aparelhos
+        </Link>
       </section>
     </>
   );

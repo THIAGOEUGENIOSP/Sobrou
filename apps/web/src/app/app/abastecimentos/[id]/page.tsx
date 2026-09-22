@@ -8,7 +8,7 @@ import { FormularioAbastecimento } from '../formulario';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Editar abastecimento — KM Legal' };
+export const metadata = { title: 'Editar abastecimento — Sobrou' };
 
 export default async function EditarAbastecimentoPage({
   params,

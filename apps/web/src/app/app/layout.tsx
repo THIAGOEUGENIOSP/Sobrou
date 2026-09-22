@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 pt-6 pb-10">
       <header className="mb-6 flex items-center justify-between">
         <Link href="/app" className="font-bold">
-          KM Legal
+          Sobrou
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           {await ehAdmin() && (

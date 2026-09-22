@@ -1,7 +1,7 @@
 'use server';
 
 import ExcelJS from 'exceljs';
-import { formatConsumo, formatMoney, formatRate } from '@kmlegal/finance';
+import { formatConsumo, formatMoney, formatRate } from '@sobrou/finance';
 import { carregarPeriodo } from './dados';
 import { can } from '@/lib/entitlements';
 import { consumirCota, mensagemDeCota } from '@/lib/cota';
@@ -103,7 +103,7 @@ export async function exportarCSV(de: string, ate: string): Promise<ResultadoExp
 
   return {
     ok: true,
-    nome: `kmlegal-${de}-a-${ate}.csv`,
+    nome: `sobrou-${de}-a-${ate}.csv`,
     tipo: 'text/csv;charset=utf-8',
     conteudoBase64: Buffer.from(csv, 'utf-8').toString('base64'),
   };
@@ -123,7 +123,7 @@ export async function exportarExcel(de: string, ate: string): Promise<ResultadoE
   if (linhas.length === 0) return { ok: false, erro: 'Não há turnos neste período.' };
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'KM Legal';
+  wb.creator = 'Sobrou';
   wb.created = new Date();
 
   // ---------- Aba 1: resumo ----------
@@ -216,7 +216,7 @@ export async function exportarExcel(de: string, ate: string): Promise<ResultadoE
 
   return {
     ok: true,
-    nome: `kmlegal-${de}-a-${ate}.xlsx`,
+    nome: `sobrou-${de}-a-${ate}.xlsx`,
     tipo: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     conteudoBase64: Buffer.from(buffer).toString('base64'),
   };

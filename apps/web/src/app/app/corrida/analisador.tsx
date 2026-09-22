@@ -9,7 +9,7 @@ import {
   formatRate,
   valorMinimoAceitavel,
   type RideRules,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { registrarAvaliacao } from '@/lib/corridas/actions';
 import { lerNumeroBR } from '@/lib/numeros';
 import { Aviso, Campo } from '@/components/formulario';

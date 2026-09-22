@@ -8,12 +8,12 @@ import {
   formatMoney,
   formatRate,
   safeDiv,
-} from '@kmlegal/finance';
+} from '@sobrou/finance';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Resumo do turno — KM Legal' };
+export const metadata = { title: 'Resumo do turno — Sobrou' };
 
 /** Tela de resumo do dia (seção 12), lida do snapshot gravado no fechamento. */
 export default async function ResumoTurnoPage({ params }: { params: Promise<{ id: string }> }) {

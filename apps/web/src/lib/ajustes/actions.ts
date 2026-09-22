@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { validarPercentuais } from '@kmlegal/finance';
+import { validarPercentuais } from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import type { TablesUpdate } from '@/lib/supabase/database.types';
 import { can } from '@/lib/entitlements';

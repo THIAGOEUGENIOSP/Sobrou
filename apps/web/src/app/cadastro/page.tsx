@@ -11,7 +11,7 @@ export default function CadastroPage() {
   return (
     <main className="mx-auto w-full max-w-sm px-4 py-12">
       <Link href="/" className="text-sm text-[var(--color-marca)]">
-        ← KM Legal
+        ← Sobrou
       </Link>
       <h1 className="mt-6 mb-1 text-2xl font-bold">Criar conta</h1>
       <p className="mb-6 text-sm text-[var(--color-tinta-suave)]">

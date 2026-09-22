@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState, useMemo, useState } from 'react';
-import { formatMoney, formatRate, precoRealLitro } from '@kmlegal/finance';
+import { formatMoney, formatRate, precoRealLitro } from '@sobrou/finance';
 import { salvarAbastecimento } from '@/lib/abastecimentos/actions';
 import { lerNumeroBR } from '@/lib/numeros';
 import { Aviso, BotaoEnviar, Campo } from '@/components/formulario';
