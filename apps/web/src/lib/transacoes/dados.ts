@@ -121,7 +121,7 @@ export async function carregarTransacoes(de: string, ate: string): Promise<ItemT
       subtitulo: t.description,
       valor: Number(t.valor),
       cor: cor.get(t.category_id) ?? null,
-      href: null,
+      href: `/app/lancamentos/${t.id}`,
     });
   }
 
