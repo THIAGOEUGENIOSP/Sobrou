@@ -12,6 +12,7 @@ const ITENS = [
   { href: '/app/abastecimentos', rotulo: 'Posto', icone: 'posto' },
   { href: '/app/reservas', rotulo: 'Reservas', icone: 'reservas' },
   { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
+  { href: '/app/mensal', rotulo: 'Mês a mês', icone: 'mensal' },
 ] as const;
 
 const ICONES: Record<(typeof ITENS)[number]['icone'], React.ReactNode> = {
@@ -38,6 +39,13 @@ const ICONES: Record<(typeof ITENS)[number]['icone'], React.ReactNode> = {
     </>
   ),
   relatorios: <path d="M4 19V10M10 19V5M16 19v-7M3 19h18" />,
+  mensal: (
+    <>
+      <rect x="4" y="12" width="3.4" height="7" rx="0.8" />
+      <rect x="10.3" y="7" width="3.4" height="12" rx="0.8" />
+      <rect x="16.6" y="3.5" width="3.4" height="15.5" rx="0.8" />
+    </>
+  ),
 };
 
 function Icone({ id }: { id: (typeof ITENS)[number]['icone'] }) {
