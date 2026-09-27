@@ -3,9 +3,12 @@
 
 /*
  * Paleta "painel de bordo": pensada pra ser lida de relance, entre corridas,
- * de dia ou de noite. O verde é sempre dinheiro (o que sobrou); o âmbar é
- * sempre atenção (vence, sobe, vai faltar). Os outros indicadores nunca usam
- * essas duas cores por decoração — só quando o significado é esse mesmo.
+ * de dia ou de noite. O verde é sempre dinheiro (o que sobrou); o vermelho é
+ * sempre despesa; o âmbar é sempre atenção (vence, sobe, vai faltar). Os
+ * outros indicadores nunca usam essas cores por decoração — só quando o
+ * significado é esse mesmo. A marca (laranja) é diferente: é a cor da
+ * identidade do app — botões, destaque, aba ativa — e não carrega
+ * significado financeiro por si só, por isso pode ficar separada do verde.
  */
 @theme {
   --color-tinta: #14181f;
@@ -16,9 +19,9 @@
   --color-papel-elevado: #ffffff;
   --color-borda: #e2e1da;
 
-  --color-marca: #1f8f63;
-  --color-marca-forte: #17734f;
-  --color-marca-suave: #e4f5ec;
+  --color-marca: #f4511e;
+  --color-marca-forte: #d8430f;
+  --color-marca-suave: #fdeae2;
 
   --color-aviso: #b4740e;
   --color-aviso-suave: #fbefdc;
@@ -28,6 +31,12 @@
 
   --color-positivo: #1f8f63;
   --color-positivo-suave: #e4f5ec;
+
+  /* Só para "margem/lucro" (o que sobrou depois de tudo) — não é decoração,
+     é o terceiro significado do painel, ao lado de verde (faturou) e
+     vermelho (gastou). */
+  --color-margem: #7c5cfc;
+  --color-margem-suave: #ece7fe;
 
   --radius-cartao: 1.1rem;
   --sombra-cartao: 0 1px 2px rgba(20, 24, 31, 0.04), 0 8px 20px -12px rgba(20, 24, 31, 0.12);
@@ -49,9 +58,9 @@
     --color-papel-elevado: #1e2530;
     --color-borda: #2a323f;
 
-    --color-marca: #3ecf8e;
-    --color-marca-forte: #29ad74;
-    --color-marca-suave: #163829;
+    --color-marca: #ff7043;
+    --color-marca-forte: #ff5722;
+    --color-marca-suave: #3a2116;
 
     --color-aviso: #e0a73b;
     --color-aviso-suave: #392b10;
@@ -61,6 +70,9 @@
 
     --color-positivo: #3ecf8e;
     --color-positivo-suave: #163829;
+
+    --color-margem: #9c88ff;
+    --color-margem-suave: #2a2242;
   }
 }
 
