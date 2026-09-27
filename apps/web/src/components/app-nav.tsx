@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { BotaoSair } from '@/components/botao-sair';
 
 const ITENS = [
   { href: '/app', rotulo: 'Meu dia', icone: 'dia' },
@@ -41,8 +43,8 @@ const ICONES: Record<(typeof ITENS)[number]['icone'], React.ReactNode> = {
 function Icone({ id }: { id: (typeof ITENS)[number]['icone'] }) {
   return (
     <svg
-      width="20"
-      height="20"
+      width="19"
+      height="19"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -56,34 +58,88 @@ function Icone({ id }: { id: (typeof ITENS)[number]['icone'] }) {
 }
 
 /**
- * Navegação fixa no rodapé.
+ * Cabeçalho + menu de navegação em gaveta lateral.
  *
- * Ícone + rótulo curto em vez de só texto: com 6 destinos, texto puro
- * espremia tudo numa linha só e ficava ilegível em telas estreitas.
+ * Com 6 destinos mais Ajustes/Conta/Admin, nem cabeçalho nem rodapé
+ * seguravam tudo direito numa tela estreita — vira uma gaveta que abre
+ * sob demanda em vez de brigar por espaço o tempo todo.
  */
-export function AppNav() {
+export function AppNav({ admin }: { admin: boolean }) {
+  const [aberto, setAberto] = useState(false);
   const pathname = usePathname();
 
+  function ativo(href: string) {
+    return href === '/app' ? pathname === '/app' : pathname.startsWith(href);
+  }
+
+  function classeItem(href: string) {
+    return `flex items-center gap-3 rounded-[0.65rem] px-3 py-2.5 text-sm font-medium ${
+      ativo(href)
+        ? 'bg-[var(--color-marca-suave)] text-[var(--color-marca)]'
+        : 'text-[var(--color-tinta-suave)]'
+    }`;
+  }
+
   return (
-    <nav className="fixed inset-x-0 bottom-0 border-t border-[var(--color-borda)] bg-[var(--color-papel)]">
-      <div className="mx-auto flex max-w-lg">
-        {ITENS.map((item) => {
-          const ativo =
-            item.href === '/app' ? pathname === '/app' : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-center ${
-                ativo ? 'text-[var(--color-marca)]' : 'text-[var(--color-tinta-suave)]'
-              }`}
-            >
-              <Icone id={item.icone} />
-              <span className="text-[10px] leading-none font-semibold">{item.rotulo}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
-  );
-}
+    <>
+      <header className="mb-6 flex items-center justify-between">
+        <Link href="/app" className="text-lg font-bold">
+          Sobrou
+        </Link>
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          aria-label="Abrir menu"
+          className="flex h-9 w-9 items-center justify-center rounded-full"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
+          <svg
+            width="19"
+            height="19"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <path d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </header>
+
+      {aberto && (
+        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setAberto(false)}
+          />
+          <div className="absolute inset-y-0 right-0 flex w-72 max-w-[82vw] flex-col bg-[var(--color-papel)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--color-borda)] p-4">
+              <span className="font-bold">Menu</span>
+              <button
+                type="button"
+                onClick={() => setAberto(false)}
+                aria-label="Fechar menu"
+                className="p-1"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                >
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto p-2">
+              {ITENS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
