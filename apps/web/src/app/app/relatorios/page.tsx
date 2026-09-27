@@ -10,6 +10,7 @@ import {
   formatRate,
   formatVariacao,
   type Comparacao,
+  type PontoDiario,
 } from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { carregarPeriodo } from '@/lib/relatorios/dados';
@@ -129,6 +130,13 @@ export default async function RelatoriosPage({
             </p>
           </section>
 
+          {atual.serie.length > 1 && (
+            <section className="mb-6">
+              <h2 className="mb-3 font-semibold">Evolução no período</h2>
+              <GraficoEvolucao pontos={atual.serie} />
+            </section>
+          )}
+
           {atual.porPlataforma.length > 0 && (
             <section className="mb-6">
               <h2 className="mb-3 font-semibold">Por plataforma</h2>
@@ -139,6 +147,17 @@ export default async function RelatoriosPage({
                   detalhe: x.corridas > 0 ? `${x.corridas} corridas` : undefined,
                 }))}
               />
+            </section>
+          )}
+
+          {atual.porPlataformaDetalhado.length > 0 && (
+            <section className="mb-6">
+              <h2 className="mb-1 font-semibold">Rentabilidade por plataforma</h2>
+              <p className="mb-3 text-xs text-[var(--color-tinta-suave)]">
+                O custo de cada turno é rateado entre as plataformas na proporção da receita que
+                cada uma trouxe naquele turno — é uma estimativa, não uma medição exata.
+              </p>
+              <TabelaRentabilidade itens={atual.porPlataformaDetalhado} />
             </section>
           )}
 
@@ -300,5 +319,159 @@ function Barras({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Margem por plataforma — não só o quanto cada uma pagou, mas o que sobrou
+ * depois do custo rateado do turno. Ordenado pela mesma ordem que já vem de
+ * `porPlataforma` (maior receita primeiro).
+ */
+function TabelaRentabilidade({
+  itens,
+}: {
+  itens: Array<{
+    nome: string;
+    valor: number;
+    corridas: number;
+    margem: number;
+    margemPorKm: number | null;
+    margemPorHora: number | null;
+  }>;
+}) {
+  return (
+    <div className="overflow-hidden rounded-[var(--radius-cartao)] border border-[var(--color-borda)]">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-[var(--color-borda)] text-left text-xs text-[var(--color-tinta-suave)]">
+            <th className="px-3 py-2 font-medium">Plataforma</th>
+            <th className="px-3 py-2 text-right font-medium">Margem</th>
+            <th className="px-3 py-2 text-right font-medium">Por km</th>
+            <th className="px-3 py-2 text-right font-medium">Por hora</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[var(--color-borda)]">
+          {itens.map((item) => (
+            <tr key={item.nome}>
+              <td className="px-3 py-2">
+                <span className="font-medium">{item.nome}</span>
+                {item.corridas > 0 && (
+                  <span className="ml-2 text-xs text-[var(--color-tinta-suave)]">
+                    {item.corridas} corridas
+                  </span>
+                )}
+              </td>
+              <td
+                className="tabular px-3 py-2 text-right font-medium"
+                style={{ color: item.margem < 0 ? 'var(--color-alerta)' : undefined }}
+              >
+                {formatMoney(item.margem)}
+              </td>
+              <td className="tabular px-3 py-2 text-right text-[var(--color-tinta-suave)]">
+                {formatRate(item.margemPorKm, 'km')}
+              </td>
+              <td className="tabular px-3 py-2 text-right text-[var(--color-tinta-suave)]">
+                {formatRate(item.margemPorHora, 'h')}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Gráfico de evolução (seção 19): resultado operacional e disponível dia a
+ * dia. SVG desenhado à mão, sem biblioteca — são só duas linhas.
+ */
+function GraficoEvolucao({ pontos }: { pontos: PontoDiario[] }) {
+  const largura = 320;
+  const altura = 132;
+  const margemY = 14;
+
+  const valores = pontos.flatMap((p) => [p.resultadoOperacional, p.disponivel]);
+  const minValor = Math.min(0, ...valores);
+  const maxValor = Math.max(0, ...valores);
+  const alcance = maxValor - minValor || 1;
+
+  const posX = (i: number) =>
+    pontos.length <= 1 ? largura / 2 : (i / (pontos.length - 1)) * largura;
+  const posY = (v: number) =>
+    altura - margemY - ((v - minValor) / alcance) * (altura - margemY * 2);
+
+  const linha = (chave: 'resultadoOperacional' | 'disponivel') =>
+    pontos
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${posX(i).toFixed(1)} ${posY(p[chave]).toFixed(1)}`)
+      .join(' ');
+
+  const zeroY = posY(0);
+  const ultimo = pontos[pontos.length - 1];
+
+  return (
+    <div className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-4">
+      <svg
+        viewBox={`0 0 ${largura} ${altura}`}
+        className="w-full"
+        role="img"
+        aria-label="Evolução do resultado operacional e do disponível ao longo do período"
+      >
+        {minValor < 0 && maxValor > 0 && (
+          <line
+            x1="0"
+            y1={zeroY}
+            x2={largura}
+            y2={zeroY}
+            stroke="var(--color-borda)"
+            strokeWidth="1"
+            strokeDasharray="3 3"
+          />
+        )}
+        <path d={linha('disponivel')} fill="none" stroke="var(--color-marca)" strokeWidth="2" />
+        <path
+          d={linha('resultadoOperacional')}
+          fill="none"
+          stroke="var(--color-aviso)"
+          strokeWidth="2"
+          strokeDasharray="4 3"
+        />
+      </svg>
+      <div className="mt-3 flex items-center justify-between text-xs">
+        <div className="flex gap-4">
+          <Legenda cor="var(--color-marca)" rotulo="Disponível" />
+          <Legenda cor="var(--color-aviso)" rotulo="Resultado operacional" tracejado />
+        </div>
+        <span className="tabular text-[var(--color-tinta-suave)]">
+          hoje: {formatMoney(ultimo.disponivel)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function Legenda({
+  cor,
+  rotulo,
+  tracejado,
+}: {
+  cor: string;
+  rotulo: string;
+  tracejado?: boolean;
+}) {
+  return (
+    <span className="flex items-center gap-1.5 text-[var(--color-tinta-suave)]">
+      <svg width="14" height="8" viewBox="0 0 14 8" aria-hidden="true">
+        <line
+          x1="0"
+          y1="4"
+          x2="14"
+          y2="4"
+          stroke={cor}
+          strokeWidth="2"
+          strokeDasharray={tracejado ? '3 2' : undefined}
+        />
+      </svg>
+      {rotulo}
+    </span>
   );
 }
