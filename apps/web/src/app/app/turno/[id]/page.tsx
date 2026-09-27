@@ -31,6 +31,14 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
   const nome = new Map((categorias ?? []).map((c) => [c.id, c.name]));
   const corridas = (receitas ?? []).reduce((a, r) => a + (r.qtd_corridas ?? 0), 0);
 
+  // Cada corrida lançada em tempo real vira sua própria linha em
+  // `shift_revenues`, então "Por plataforma" agrupa por categoria antes de
+  // mostrar — senão a mesma plataforma apareceria uma vez por corrida.
+  const porPlataforma = new Map<string, number>();
+  for (const r of receitas ?? []) {
+    porPlataforma.set(r.category_id, (porPlataforma.get(r.category_id) ?? 0) + Number(r.valor));
+  }
+
   const km = Number(turno.snap_km ?? 0);
   const faturamento = Number(turno.snap_faturamento ?? 0);
   const horas = Number(turno.snap_horas ?? 0);
@@ -100,18 +108,18 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
         </dl>
       </section>
 
-      {(receitas ?? []).length > 1 && (
+      {porPlataforma.size > 1 && (
         <section className="mb-6">
           <h2 className="mb-3 font-semibold">Por plataforma</h2>
           <ul className="space-y-2">
-            {(receitas ?? []).map((r) => (
+            {Array.from(porPlataforma.entries()).map(([categoryId, valor]) => (
               <li
-                key={r.category_id}
+                key={categoryId}
                 className="flex justify-between gap-3 rounded-[var(--radius-cartao)] px-4 py-3"
                 style={{ background: 'var(--color-papel-elevado)' }}
               >
-                <span>{nome.get(r.category_id) ?? 'Receita'}</span>
-                <span className="tabular font-medium">{formatMoney(Number(r.valor))}</span>
+                <span>{nome.get(categoryId) ?? 'Receita'}</span>
+                <span className="tabular font-medium">{formatMoney(valor)}</span>
               </li>
             ))}
           </ul>
