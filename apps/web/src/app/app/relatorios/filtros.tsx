@@ -30,12 +30,12 @@ export function FiltrosPeriodo({ atual }: { atual: ChavePeriodo }) {
             key={p.chave}
             type="button"
             onClick={() => ir(p.chave)}
-            className="shrink-0 rounded-full border px-4 py-2 text-sm whitespace-nowrap"
-            style={{
-              borderColor: atual === p.chave ? 'var(--color-marca)' : 'var(--color-borda)',
-              color: atual === p.chave ? 'var(--color-marca)' : undefined,
-              fontWeight: atual === p.chave ? 600 : 400,
-            }}
+            className="shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
+            style={
+              atual === p.chave
+                ? { background: 'var(--color-marca)', color: '#fff' }
+                : { background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }
+            }
           >
             {p.rotulo}
           </button>
@@ -43,12 +43,12 @@ export function FiltrosPeriodo({ atual }: { atual: ChavePeriodo }) {
         <button
           type="button"
           onClick={() => setAberto((v) => !v)}
-          className="shrink-0 rounded-full border px-4 py-2 text-sm whitespace-nowrap"
-          style={{
-            borderColor: atual === 'personalizado' ? 'var(--color-marca)' : 'var(--color-borda)',
-            color: atual === 'personalizado' ? 'var(--color-marca)' : undefined,
-            fontWeight: atual === 'personalizado' ? 600 : 400,
-          }}
+          className="shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap"
+          style={
+            atual === 'personalizado'
+              ? { background: 'var(--color-marca)', color: '#fff' }
+              : { background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }
+          }
         >
           Escolher datas
         </button>
