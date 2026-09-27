@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { can } from '@/lib/entitlements';
 import { CARDS_DISPONIVEIS } from '@/lib/ajustes/cards';
+import { publicEnv } from '@/lib/env';
+import { NotificacoesToggle } from '@/components/notificacoes-toggle';
 import { FormularioAjustes, FormularioPercentuais } from './formularios';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +46,14 @@ export default async function AjustesPage() {
           }))}
           podePersonalizar={podePersonalizar}
         />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-1 font-semibold">Avisos</h2>
+        <p className="mb-4 text-sm text-[var(--color-tinta-suave)]">
+          Receba uma notificação sem precisar abrir o app.
+        </p>
+        <NotificacoesToggle vapidPublicKey={publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />
       </section>
 
       <section className="mt-10">
