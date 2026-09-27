@@ -23,7 +23,7 @@ function rotuloDia(data: string): string {
 export default async function TransacoesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>;
+  searchParams: Promise<{ tipo?: string; categoria?: string }>;
 }) {
   const sp = await searchParams;
   const ctx = await carregarContexto();
@@ -31,7 +31,15 @@ export default async function TransacoesPage({
 
   const periodo = resolverPeriodoDoUsuario('mes', ctx.timezone);
   const itens = await carregarTransacoes(periodo.de, periodo.ate);
-  const filtrados = itens.filter((i) => i.tipo === tipo);
+  const doTipo = itens.filter((i) => i.tipo === tipo);
+
+  // Chips de categoria: só as que de fato aparecem nesse tipo/período — nunca
+  // uma lista fixa que poderia mostrar uma categoria vazia.
+  const categorias = [...new Map(doTipo.map((i) => [i.titulo, i.cor])).entries()].sort((a, b) =>
+    a[0].localeCompare(b[0]),
+  );
+  const categoriaAtiva = sp.categoria && categorias.some((c) => c[0] === sp.categoria) ? sp.categoria : null;
+  const filtrados = categoriaAtiva ? doTipo.filter((i) => i.titulo === categoriaAtiva) : doTipo;
 
   const porDia = new Map<string, ItemTransacao[]>();
   for (const item of filtrados) {
@@ -52,7 +60,7 @@ export default async function TransacoesPage({
       </p>
 
       <div
-        className="mb-6 grid grid-cols-2 gap-1 rounded-full p-1"
+        className="mb-4 grid grid-cols-2 gap-1 rounded-full p-1"
         style={{ background: 'var(--color-papel-suave)' }}
       >
         {ABAS.map((a) => (
@@ -71,13 +79,50 @@ export default async function TransacoesPage({
         ))}
       </div>
 
+      {categorias.length > 1 && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Link
+            href={`/app/transacoes?tipo=${tipo}`}
+            className="rounded-full px-3.5 py-1.5 text-xs font-medium"
+            style={
+              !categoriaAtiva
+                ? { background: 'var(--color-marca)', color: '#fff' }
+                : { background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }
+            }
+          >
+            Todas
+          </Link>
+          {categorias.map(([nome, cor]) => (
+            <Link
+              key={nome}
+              href={`/app/transacoes?tipo=${tipo}&categoria=${encodeURIComponent(nome)}`}
+              className="rounded-full px-3.5 py-1.5 text-xs font-medium"
+              style={
+                categoriaAtiva === nome
+                  ? { background: cor ?? 'var(--color-marca)', color: '#fff' }
+                  : { background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }
+              }
+            >
+              {nome}
+            </Link>
+          ))}
+        </div>
+      )}
+
       {dias.length === 0 ? (
-        <div className="rounded-[var(--radius-cartao)] border border-dashed border-[var(--color-borda)] p-6 text-center">
-          <p className="font-medium">Nada por aqui ainda {periodo.rotulo.toLowerCase()}.</p>
+        <div
+          className="rounded-[var(--radius-cartao)] p-6 text-center"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
+          <p className="font-medium">
+            {categoriaAtiva ? `Nada de ${categoriaAtiva.toLowerCase()} nesse período.` : `Nada por aqui ainda ${periodo.rotulo.toLowerCase()}.`}
+          </p>
           <p className="mt-1 text-sm text-[var(--color-tinta-suave)]">
-            {tipo === 'entrada'
-              ? 'Feche um turno pra registrar receita por plataforma.'
-              : 'Lance uma despesa, um abastecimento ou uma manutenção.'}
+            {categoriaAtiva
+              ? 'Tente outra categoria ou veja "Todas".'
+              : tipo === 'entrada'
+                ? 'Feche um turno pra registrar receita por plataforma.'
+                : 'Lance uma despesa, um abastecimento ou uma manutenção.'}
           </p>
         </div>
       ) : (
@@ -110,7 +155,7 @@ export default async function TransacoesPage({
 function LinhaTransacao({ item }: { item: ItemTransacao }) {
   const conteudo = (
     <div
-      className="flex items-center gap-3 rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-3"
+      className="flex items-center gap-3 rounded-[var(--radius-cartao)] p-3"
       style={{ background: 'var(--color-papel-elevado)' }}
     >
       <span
