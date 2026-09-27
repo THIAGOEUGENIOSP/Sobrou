@@ -5,17 +5,27 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BotaoSair } from '@/components/botao-sair';
 
-const ITENS = [
-  { href: '/app', rotulo: 'Meu dia', icone: 'dia' },
-  { href: '/app/consultor', rotulo: 'Consultor', icone: 'consultor' },
+/** Os 4 destinos mais usados — ficam sempre à mão, na barra flutuante. */
+const ITENS_PRINCIPAIS = [
+  { href: '/app', rotulo: 'Painel', icone: 'dia' },
   { href: '/app/turno', rotulo: 'Turno', icone: 'turno' },
-  { href: '/app/abastecimentos', rotulo: 'Posto', icone: 'posto' },
-  { href: '/app/reservas', rotulo: 'Reservas', icone: 'reservas' },
   { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
   { href: '/app/mensal', rotulo: 'Mês a mês', icone: 'mensal' },
 ] as const;
 
-const ICONES: Record<(typeof ITENS)[number]['icone'], React.ReactNode> = {
+/** O resto — menos usado no dia a dia — mora atrás do botão "Mais". */
+const ITENS_MAIS = [
+  { href: '/app/consultor', rotulo: 'Consultor', icone: 'consultor' },
+  { href: '/app/abastecimentos', rotulo: 'Posto', icone: 'posto' },
+  { href: '/app/reservas', rotulo: 'Reservas', icone: 'reservas' },
+] as const;
+
+type Icone =
+  | (typeof ITENS_PRINCIPAIS)[number]['icone']
+  | (typeof ITENS_MAIS)[number]['icone']
+  | 'mais';
+
+const ICONES: Record<Icone, React.ReactNode> = {
   dia: (
     <>
       <circle cx="12" cy="12" r="4" />
@@ -46,13 +56,20 @@ const ICONES: Record<(typeof ITENS)[number]['icone'], React.ReactNode> = {
       <rect x="16.6" y="3.5" width="3.4" height="15.5" rx="0.8" />
     </>
   ),
+  mais: (
+    <>
+      <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    </>
+  ),
 };
 
-function Icone({ id }: { id: (typeof ITENS)[number]['icone'] }) {
+function IconeSvg({ id, tamanho = 20 }: { id: Icone; tamanho?: number }) {
   return (
     <svg
-      width="19"
-      height="19"
+      width={tamanho}
+      height={tamanho}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -66,26 +83,30 @@ function Icone({ id }: { id: (typeof ITENS)[number]['icone'] }) {
 }
 
 /**
- * Cabeçalho + menu de navegação em gaveta lateral.
+ * Cabeçalho simples + barra de navegação flutuante.
  *
- * Com 6 destinos mais Ajustes/Conta/Admin, nem cabeçalho nem rodapé
- * seguravam tudo direito numa tela estreita — vira uma gaveta que abre
- * sob demanda em vez de brigar por espaço o tempo todo.
+ * Trocamos o menu hambúrguer (ícone pequeno, gaveta lateral) por uma barra
+ * suspensa no rodapé, com os 4 destinos mais usados sempre visíveis e alvos
+ * de toque grandes — o motorista usa isso de pé, com uma mão só. O resto dos
+ * destinos (menos usados no dia a dia) mora atrás do botão "Mais", que abre
+ * uma folha subindo do rodapé.
  */
 export function AppNav({ admin }: { admin: boolean }) {
-  const [aberto, setAberto] = useState(false);
+  const [maisAberto, setMaisAberto] = useState(false);
   const pathname = usePathname();
 
   function ativo(href: string) {
     return href === '/app' ? pathname === '/app' : pathname.startsWith(href);
   }
 
-  function classeItem(href: string) {
-    return `flex items-center gap-3 rounded-[0.65rem] px-3 py-2.5 text-sm font-medium ${
-      ativo(href)
-        ? 'bg-[var(--color-marca-suave)] text-[var(--color-marca)]'
-        : 'text-[var(--color-tinta-suave)]'
-    }`;
+  const algumItemMaisAtivo =
+    ITENS_MAIS.some((i) => ativo(i.href)) ||
+    ativo('/app/ajustes') ||
+    ativo('/app/conta') ||
+    (admin && ativo('/admin'));
+
+  function fecharMais() {
+    setMaisAberto(false);
   }
 
   return (
@@ -94,99 +115,133 @@ export function AppNav({ admin }: { admin: boolean }) {
         <Link href="/app" className="text-lg font-bold">
           Sobrou
         </Link>
-        <button
-          type="button"
-          onClick={() => setAberto(true)}
-          aria-label="Abrir menu"
-          className="flex h-9 w-9 items-center justify-center rounded-full"
-          style={{ background: 'var(--color-papel-suave)' }}
-        >
-          <svg
-            width="19"
-            height="19"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
       </header>
 
-      {aberto && (
-        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true">
+      {/* Barra flutuante: não gruda nas bordas nem no rodapé — fica "suspensa",
+          com espaço ao redor e sombra funda, pra parecer um objeto por cima do
+          conteúdo, não uma tira colada na tela. */}
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-3"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)' }}
+        aria-label="Navegação principal"
+      >
+        <div
+          className="flex w-full max-w-lg items-stretch gap-1 rounded-[1.5rem] border p-1.5"
+          style={{
+            background: 'var(--color-papel-elevado)',
+            borderColor: 'var(--color-borda)',
+            boxShadow: '0 16px 36px -10px rgba(15, 18, 24, 0.38), 0 2px 10px rgba(15, 18, 24, 0.14)',
+          }}
+        >
+          {ITENS_PRINCIPAIS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.1rem] py-2 text-center"
+              style={
+                ativo(item.href)
+                  ? { background: 'var(--color-marca-suave)', color: 'var(--color-marca)' }
+                  : { color: 'var(--color-tinta-suave)' }
+              }
+            >
+              <IconeSvg id={item.icone} />
+              <span className="w-full truncate px-0.5 text-[0.63rem] font-medium leading-tight">
+                {item.rotulo}
+              </span>
+            </Link>
+          ))}
+
           <button
             type="button"
-            aria-label="Fechar menu"
+            onClick={() => setMaisAberto(true)}
+            aria-label="Mais opções"
+            aria-haspopup="dialog"
+            aria-expanded={maisAberto}
+            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.1rem] py-2 text-center"
+            style={
+              algumItemMaisAtivo
+                ? { background: 'var(--color-marca-suave)', color: 'var(--color-marca)' }
+                : { color: 'var(--color-tinta-suave)' }
+            }
+          >
+            <IconeSvg id="mais" />
+            <span className="text-[0.63rem] font-medium leading-tight">Mais</span>
+          </button>
+        </div>
+      </nav>
+
+      {maisAberto && (
+        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="Mais opções">
+          <button
+            type="button"
+            aria-label="Fechar"
             className="absolute inset-0 bg-black/40"
-            onClick={() => setAberto(false)}
+            onClick={fecharMais}
           />
-          <div className="absolute inset-y-0 right-0 flex w-72 max-w-[82vw] flex-col bg-[var(--color-papel)] shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[var(--color-borda)] p-4">
-              <span className="font-bold">Menu</span>
-              <button
-                type="button"
-                onClick={() => setAberto(false)}
-                aria-label="Fechar menu"
-                className="p-1"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                >
+          <div
+            className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-[1.6rem] p-2 pb-[max(env(safe-area-inset-bottom,0px),1rem)] shadow-2xl"
+            style={{ background: 'var(--color-papel)' }}
+          >
+            <div className="mx-auto mb-1 h-1.5 w-10 flex-none rounded-full" style={{ background: 'var(--color-borda)' }} />
+
+            <div className="flex items-center justify-between px-2 py-2">
+              <span className="font-bold">Mais opções</span>
+              <button type="button" onClick={fecharMais} aria-label="Fechar" className="p-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                   <path d="M6 6l12 12M18 6L6 18" />
                 </svg>
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto p-2">
-              {ITENS.map((item) => (
+            <div className="mb-1 grid grid-cols-3 gap-2 px-1">
+              {ITENS_MAIS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setAberto(false)}
-                  className={classeItem(item.href)}
+                  onClick={fecharMais}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-[var(--radius-cartao)] py-4 text-center"
+                  style={
+                    ativo(item.href)
+                      ? { background: 'var(--color-marca-suave)', color: 'var(--color-marca)' }
+                      : { background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }
+                  }
                 >
-                  <Icone id={item.icone} />
-                  {item.rotulo}
+                  <IconeSvg id={item.icone} tamanho={22} />
+                  <span className="text-xs font-medium">{item.rotulo}</span>
                 </Link>
               ))}
+            </div>
 
-              <div className="my-2 border-t border-[var(--color-borda)]" />
-
+            <nav className="flex-1 overflow-y-auto p-1 pt-2">
               {admin && (
                 <Link
                   href="/admin"
-                  onClick={() => setAberto(false)}
-                  className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium text-[var(--color-marca)]"
+                  onClick={fecharMais}
+                  className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium"
+                  style={{ color: 'var(--color-marca)' }}
                 >
                   Admin
                 </Link>
               )}
               <Link
                 href="/app/ajustes"
-                onClick={() => setAberto(false)}
-                className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium text-[var(--color-tinta-suave)]"
+                onClick={fecharMais}
+                className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium"
+                style={{ color: 'var(--color-tinta-suave)' }}
               >
                 Ajustes
               </Link>
               <Link
                 href="/app/conta"
-                onClick={() => setAberto(false)}
-                className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium text-[var(--color-tinta-suave)]"
+                onClick={fecharMais}
+                className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium"
+                style={{ color: 'var(--color-tinta-suave)' }}
               >
                 Conta
               </Link>
             </nav>
 
-            <div className="border-t border-[var(--color-borda)] p-3">
+            <div className="border-t p-3" style={{ borderColor: 'var(--color-borda)' }}>
               <BotaoSair className="text-sm text-[var(--color-tinta-suave)]" />
             </div>
           </div>
