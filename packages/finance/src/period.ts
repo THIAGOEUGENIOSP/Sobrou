@@ -206,3 +206,115 @@ export function ritmoNecessario(
   if (falta <= 0) return null;
   return money(falta / diasRestantes);
 }
+
+/**
+ * Rentabilidade por plataforma (não só receita) — seção do relatório.
+ *
+ * O Sobrou sabe quanto cada plataforma pagou dentro de um turno, mas não
+ * quanto km foi rodado para cada uma: os apps ficam ligados ao mesmo tempo.
+ * O custo do turno (combustível + outras despesas) é rateado entre as
+ * plataformas na mesma proporção da receita que cada uma trouxe naquele
+ * turno específico — não é uma medição perfeita, mas já responde "qual
+ * plataforma rendeu mais por hora de verdade", que é o que decide para
+ * onde vale mais a pena dar preferência. Turnos sem faturamento (share
+ * indefinido) simplesmente não entram no rateio daquele turno.
+ */
+export interface ShiftForPlatforms {
+  id: string;
+  km: number;
+  horas: number;
+  faturamento: number;
+  custoCombustivel: number;
+  outrasDespesas: number;
+}
+
+export interface ShiftPlatformRevenue {
+  shiftId: string;
+  categoryId: string;
+  valor: number;
+  corridas?: number | null;
+}
+
+export interface PlatformSummary {
+  categoryId: string;
+  valor: number;
+  corridas: number;
+  kmAlocado: number;
+  horasAlocado: number;
+  custoAlocado: number;
+  margem: number;
+  margemPorKm: number | null;
+  margemPorHora: number | null;
+}
+
+export function porPlataforma(
+  turnos: readonly ShiftForPlatforms[],
+  receitas: readonly ShiftPlatformRevenue[],
+): PlatformSummary[] {
+  const porTurno = new Map(turnos.map((t) => [t.id, t]));
+  const acc = new Map<
+    string,
+    { valor: number; corridas: number; km: number; horas: number; custo: number }
+  >();
+
+  for (const r of receitas) {
+    const turno = porTurno.get(r.shiftId);
+    if (!turno) continue;
+    const share = safeDiv(r.valor, turno.faturamento) ?? 0;
+    const custoTurno = turno.custoCombustivel + turno.outrasDespesas;
+
+    const atual = acc.get(r.categoryId) ?? { valor: 0, corridas: 0, km: 0, horas: 0, custo: 0 };
+    atual.valor += r.valor;
+    atual.corridas += r.corridas ?? 0;
+    atual.km += turno.km * share;
+    atual.horas += turno.horas * share;
+    atual.custo += custoTurno * share;
+    acc.set(r.categoryId, atual);
+  }
+
+  return [...acc.entries()]
+    .map(([categoryId, v]) => {
+      const margem = money(v.valor - v.custo);
+      return {
+        categoryId,
+        valor: money(v.valor),
+        corridas: v.corridas,
+        kmAlocado: roundTo(v.km, 2),
+        horasAlocado: roundTo(v.horas, 2),
+        custoAlocado: money(v.custo),
+        margem,
+        margemPorKm: safeDiv(margem, v.km, 4),
+        margemPorHora: safeDiv(margem, v.horas, 2),
+      };
+    })
+    .sort((a, b) => b.valor - a.valor);
+}
+
+/**
+ * Série diária de resultado operacional e disponível — para o gráfico de
+ * evolução dos relatórios. Soma turnos do mesmo dia (pode haver mais de
+ * um) e ordena por data crescente. Vem dos mesmos snapshots congelados de
+ * `agregarPeriodo`, então nunca diverge dos totais do período.
+ */
+export interface PontoDiario {
+  workDate: string;
+  resultadoOperacional: number;
+  disponivel: number;
+}
+
+export function serieDiaria(turnos: readonly ShiftSnapshot[]): PontoDiario[] {
+  const porDia = new Map<string, { resultado: number; disponivel: number }>();
+  for (const t of turnos) {
+    const atual = porDia.get(t.workDate) ?? { resultado: 0, disponivel: 0 };
+    atual.resultado += t.resultadoOperacional;
+    atual.disponivel += t.disponivel;
+    porDia.set(t.workDate, atual);
+  }
+  return [...porDia.entries()]
+    .map(([workDate, v]) => ({
+      workDate,
+      resultadoOperacional: money(v.resultado),
+      disponivel: money(v.disponivel),
+    }))
+    .sort((a, b) => (a.workDate < b.workDate ? -1 : a.workDate > b.workDate ? 1 : 0));
+}
