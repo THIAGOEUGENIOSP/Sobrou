@@ -214,14 +214,14 @@ function Cartao({
     <div
       className="rounded-[var(--radius-cartao)] border p-4"
       style={{
-        borderColor: destaque ? 'var(--color-marca)' : 'var(--color-borda)',
+        borderColor: destaque ? 'var(--color-positivo)' : 'var(--color-borda)',
         background: destaque ? 'transparent' : 'var(--color-papel-suave)',
       }}
     >
       <p className="text-sm text-[var(--color-tinta-suave)]">{titulo}</p>
       <p
         className="tabular mt-1 text-2xl font-bold"
-        style={destaque ? { color: 'var(--color-marca)' } : undefined}
+        style={destaque ? { color: 'var(--color-positivo)' } : undefined}
       >
         {valor}
       </p>
@@ -427,7 +427,7 @@ function GraficoEvolucao({ pontos }: { pontos: PontoDiario[] }) {
             strokeDasharray="3 3"
           />
         )}
-        <path d={linha('disponivel')} fill="none" stroke="var(--color-marca)" strokeWidth="2" />
+        <path d={linha('disponivel')} fill="none" stroke="var(--color-positivo)" strokeWidth="2" />
         <path
           d={linha('resultadoOperacional')}
           fill="none"
@@ -438,7 +438,7 @@ function GraficoEvolucao({ pontos }: { pontos: PontoDiario[] }) {
       </svg>
       <div className="mt-3 flex items-center justify-between text-xs">
         <div className="flex gap-4">
-          <Legenda cor="var(--color-marca)" rotulo="Disponível" />
+          <Legenda cor="var(--color-positivo)" rotulo="Disponível" />
           <Legenda cor="var(--color-aviso)" rotulo="Resultado operacional" tracejado />
         </div>
         <span className="tabular text-[var(--color-tinta-suave)]">
