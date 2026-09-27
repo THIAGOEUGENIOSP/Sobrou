@@ -79,7 +79,7 @@ export async function carregarTransacoes(de: string, ate: string): Promise<ItemT
       subtitulo: r.qtd_corridas ? `${r.qtd_corridas} corridas` : null,
       valor: Number(r.valor),
       cor: cor.get(r.category_id) ?? null,
-      href: `/app/turno/${turno.id}`,
+      href: `/app/turno/corrida/${r.id}`,
     });
   }
 
