@@ -111,6 +111,11 @@ function CartaoMeta({ item }: { item: MetaComProgresso }) {
       </p>
 
       <div
+        role="progressbar"
+        aria-label={`Progresso da meta de ${item.rotulo}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
         className="mb-2 h-2.5 overflow-hidden rounded-full"
         style={{ background: 'var(--color-papel-suave)' }}
       >
