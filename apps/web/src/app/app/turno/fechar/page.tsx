@@ -20,16 +20,31 @@ export default async function FecharTurnoPage() {
 
   if (!turno) redirect('/app/turno');
 
-  const [{ data: plataformas }, { data: despesas }] = await Promise.all([
+  const [{ data: ganhos }, { data: despesas }, { data: categorias }] = await Promise.all([
     supabase
-      .from('categories')
-      .select('id, name, is_favorite, sort_order')
-      .eq('kind', 'receita')
-      .is('archived_at', null)
-      .order('is_favorite', { ascending: false })
-      .order('sort_order'),
+      .from('shift_revenues')
+      .select('category_id, valor, qtd_corridas')
+      .eq('shift_id', turno.id),
     supabase.from('transactions').select('valor').eq('shift_id', turno.id).eq('kind', 'despesa'),
+    supabase.from('categories').select('id, name').is('archived_at', null),
   ]);
+
+  const nomeCategoria = new Map((categorias ?? []).map((c) => [c.id, c.name]));
+
+  const porCategoria = new Map<string, { valor: number; qtdCorridas: number }>();
+  for (const g of ganhos ?? []) {
+    const atual = porCategoria.get(g.category_id) ?? { valor: 0, qtdCorridas: 0 };
+    atual.valor += Number(g.valor);
+    atual.qtdCorridas += g.qtd_corridas ?? 0;
+    porCategoria.set(g.category_id, atual);
+  }
+
+  const receitas = Array.from(porCategoria.entries()).map(([categoryId, v]) => ({
+    categoryId,
+    categoryName: nomeCategoria.get(categoryId) ?? 'Receita',
+    valor: v.valor,
+    qtdCorridas: v.qtdCorridas || null,
+  }));
 
   const parametros = parametrosDoTurno(ctx);
 
@@ -40,22 +55,20 @@ export default async function FecharTurnoPage() {
       </Link>
       <h1 className="mt-4 mb-1 text-xl font-bold">Finalizar turno</h1>
       <p className="mb-6 text-sm text-[var(--color-tinta-suave)]">
-        Três campos e o dia fecha. O resto o app já sabe.
+        O faturamento já está lançado — só falta o hodômetro de agora.
       </p>
 
       <FormularioFecharTurno
         shiftId={turno.id}
         iniciadoEm={turno.started_at}
+        pausedSeconds={Number(turno.paused_seconds ?? 0)}
+        pausedAt={turno.paused_at}
         odoInicial={Number(turno.odo_inicial)}
         consumo={Number(turno.consumo_usado ?? parametros.consumo)}
         precoCombustivel={Number(turno.preco_combustivel_usado ?? parametros.preco)}
         origemConsumo={parametros.origemConsumo}
         despesasDoTurno={(despesas ?? []).map((d) => Number(d.valor))}
-        plataformas={(plataformas ?? []).map((p) => ({
-          id: p.id,
-          name: p.name,
-          favorita: p.is_favorite,
-        }))}
+        receitas={receitas}
         allocation={ctx.allocation}
       />
     </>
