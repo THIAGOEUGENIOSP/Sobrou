@@ -35,7 +35,7 @@ export interface DadosPeriodo {
     snap_disponivel: number | null;
   }>;
   /** Faturamento por plataforma no período. */
-  porPlataforma: Array<{ nome: string; valor: number; corridas: number }>;
+  porPlataforma: Array<{ nome: string; cor: string | null; valor: number; corridas: number }>;
   /**
    * Rentabilidade por plataforma: custo do turno rateado pela participação
    * na receita, não só o quanto cada uma pagou.
@@ -51,7 +51,7 @@ export interface DadosPeriodo {
   /** Resultado operacional e disponível dia a dia, para o gráfico de evolução. */
   serie: PontoDiario[];
   /** Despesas por categoria no período. */
-  porCategoria: Array<{ nome: string; valor: number }>;
+  porCategoria: Array<{ nome: string; cor: string | null; valor: number }>;
   /** true quando o plano cortou parte do período pedido. */
   recortadoPeloPlano: boolean;
   deEfetivo: string;
@@ -106,8 +106,9 @@ export async function carregarPeriodo(de: string, ate: string): Promise<DadosPer
     .gte('work_date', deEfetivo)
     .lte('work_date', ate);
 
-  const { data: categorias } = await supabase.from('categories').select('id, name, kind');
+  const { data: categorias } = await supabase.from('categories').select('id, name, kind, color');
   const nome = new Map((categorias ?? []).map((c) => [c.id, c.name]));
+  const cor = new Map((categorias ?? []).map((c) => [c.id, c.color]));
 
   const snapshots: ShiftSnapshot[] = (turnos ?? []).map((t) => ({
     workDate: t.work_date,
@@ -178,7 +179,7 @@ export async function carregarPeriodo(de: string, ate: string): Promise<DadosPer
     totais,
     turnos: turnos ?? [],
     porPlataforma: [...plataformas.entries()]
-      .map(([id, v]) => ({ nome: nome.get(id) ?? 'Receita', ...v }))
+      .map(([id, v]) => ({ nome: nome.get(id) ?? 'Receita', cor: cor.get(id) ?? null, ...v }))
       .sort((a, b) => b.valor - a.valor),
     porPlataformaDetalhado: detalhamento.map((d) => ({
       nome: nome.get(d.categoryId) ?? 'Receita',
@@ -190,7 +191,7 @@ export async function carregarPeriodo(de: string, ate: string): Promise<DadosPer
     })),
     serie: serieDiaria(snapshots),
     porCategoria: [...categoriasDespesa.entries()]
-      .map(([id, valor]) => ({ nome: nome.get(id) ?? 'Despesa', valor }))
+      .map(([id, valor]) => ({ nome: nome.get(id) ?? 'Despesa', cor: cor.get(id) ?? null, valor }))
       .sort((a, b) => b.valor - a.valor),
     recortadoPeloPlano: deEfetivo !== de,
     deEfetivo,
