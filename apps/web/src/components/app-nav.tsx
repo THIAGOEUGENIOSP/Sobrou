@@ -5,25 +5,64 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BotaoSair } from '@/components/botao-sair';
 
-/** Os 4 destinos mais usados — ficam sempre à mão, na barra flutuante. */
+/** Os 3 destinos ao redor do botão "+" central — sempre à mão. Os 2
+ * primeiros ficam à esquerda dele, o último à direita. */
 const ITENS_PRINCIPAIS = [
-  { href: '/app', rotulo: 'Painel', icone: 'dia' },
+  { href: '/app', rotulo: 'Início', icone: 'dia' },
   { href: '/app/turno', rotulo: 'Turno', icone: 'turno' },
-  { href: '/app/transacoes', rotulo: 'Transações', icone: 'transacoes' },
   { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
 ] as const;
 
 /** O resto — menos usado no dia a dia — mora atrás do botão "Mais". */
 const ITENS_MAIS = [
+  { href: '/app/transacoes', rotulo: 'Transações', icone: 'transacoes' },
   { href: '/app/consultor', rotulo: 'Consultor', icone: 'consultor' },
-  { href: '/app/abastecimentos', rotulo: 'Posto', icone: 'posto' },
+  { href: '/app/abastecimentos', rotulo: 'Postos', icone: 'posto' },
   { href: '/app/reservas', rotulo: 'Reservas', icone: 'reservas' },
+  { href: '/app/metas', rotulo: 'Metas', icone: 'metas' },
   { href: '/app/mensal', rotulo: 'Mês a mês', icone: 'mensal' },
+] as const;
+
+/** As 4 ações do botão "+" central — o "registro rápido" global do app. */
+const ACOES_RAPIDAS = [
+  {
+    href: '/app/turno',
+    rotulo: 'Adicionar ganho',
+    descricao: 'Corrida / Plataforma',
+    icone: 'ganho',
+    cor: 'var(--color-positivo)',
+    fundo: 'var(--color-positivo-suave)',
+  },
+  {
+    href: '/app/abastecimentos/novo',
+    rotulo: 'Abastecimento',
+    descricao: 'Combustível',
+    icone: 'posto',
+    cor: 'var(--color-alerta)',
+    fundo: 'var(--color-alerta-suave)',
+  },
+  {
+    href: '/app/lancamentos/novo',
+    rotulo: 'Despesa',
+    descricao: 'Estacionamento, pedágio...',
+    icone: 'despesa',
+    cor: 'var(--color-info)',
+    fundo: 'var(--color-info-suave)',
+  },
+  {
+    href: '/app/manutencoes/nova',
+    rotulo: 'Manutenção',
+    descricao: 'Revisão, peças...',
+    icone: 'manutencao',
+    cor: 'var(--color-margem)',
+    fundo: 'var(--color-margem-suave)',
+  },
 ] as const;
 
 type Icone =
   | (typeof ITENS_PRINCIPAIS)[number]['icone']
   | (typeof ITENS_MAIS)[number]['icone']
+  | (typeof ACOES_RAPIDAS)[number]['icone']
   | 'mais';
 
 const ICONES: Record<Icone, React.ReactNode> = {
@@ -56,12 +95,35 @@ const ICONES: Record<Icone, React.ReactNode> = {
       <path d="M8.5 8h7M8.5 12h7M8.5 16h4" />
     </>
   ),
+  metas: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4.5" />
+      <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+    </>
+  ),
   mensal: (
     <>
       <rect x="4" y="12" width="3.4" height="7" rx="0.8" />
       <rect x="10.3" y="7" width="3.4" height="12" rx="0.8" />
       <rect x="16.6" y="3.5" width="3.4" height="15.5" rx="0.8" />
     </>
+  ),
+  ganho: (
+    <>
+      <rect x="3" y="7" width="18" height="10" rx="2.5" />
+      <circle cx="12" cy="12" r="2.2" />
+      <path d="M6.5 9v.01M17.5 15v.01" />
+    </>
+  ),
+  despesa: (
+    <>
+      <rect x="6" y="3" width="12" height="18" rx="2" />
+      <path d="M9 8h6M9 12h6M9 16h3" />
+    </>
+  ),
+  manutencao: (
+    <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2-2 2.6-2.6Z" />
   ),
   mais: (
     <>
@@ -90,16 +152,17 @@ function IconeSvg({ id, tamanho = 20 }: { id: Icone; tamanho?: number }) {
 }
 
 /**
- * Cabeçalho simples + barra de navegação flutuante.
+ * Cabeçalho simples + barra de navegação flutuante com botão "+" central.
  *
- * Trocamos o menu hambúrguer (ícone pequeno, gaveta lateral) por uma barra
- * suspensa no rodapé, com os 4 destinos mais usados sempre visíveis e alvos
- * de toque grandes — o motorista usa isso de pé, com uma mão só. O resto dos
- * destinos (menos usados no dia a dia) mora atrás do botão "Mais", que abre
- * uma folha subindo do rodapé.
+ * A barra tem 5 posições: Início, Turno, o "+" (ação rápida global, elevado
+ * acima da barra), Relatórios e Mais. O "+" abre um bottom sheet com as 4
+ * formas de registrar algo — ganho, abastecimento, despesa, manutenção — em
+ * vez de decidir por você. O resto dos destinos, menos usados no dia a dia
+ * (incluindo Transações), mora atrás do botão "Mais".
  */
 export function AppNav({ admin }: { admin: boolean }) {
   const [maisAberto, setMaisAberto] = useState(false);
+  const [novoAberto, setNovoAberto] = useState(false);
   const pathname = usePathname();
 
   function ativo(href: string) {
@@ -116,6 +179,10 @@ export function AppNav({ admin }: { admin: boolean }) {
     setMaisAberto(false);
   }
 
+  function fecharNovo() {
+    setNovoAberto(false);
+  }
+
   return (
     <>
       <header className="mb-6 flex items-center justify-between">
@@ -126,21 +193,43 @@ export function AppNav({ admin }: { admin: boolean }) {
 
       {/* Barra flutuante: não gruda nas bordas nem no rodapé — fica "suspensa",
           com espaço ao redor e sombra funda, pra parecer um objeto por cima do
-          conteúdo, não uma tira colada na tela. */}
+          conteúdo, não uma tira colada na tela. O botão "+" fica elevado acima
+          dela, como ação global de destaque. */}
       <nav
         className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-3"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)' }}
         aria-label="Navegação principal"
       >
         <div
-          className="flex w-full max-w-lg items-stretch gap-1 rounded-[1.5rem] border p-1.5"
+          className="relative flex w-full max-w-lg items-stretch gap-1 rounded-[1.5rem] border p-1.5"
           style={{
             background: 'var(--color-papel-elevado)',
             borderColor: 'var(--color-borda)',
-            boxShadow: '0 16px 36px -10px rgba(15, 18, 24, 0.38), 0 2px 10px rgba(15, 18, 24, 0.14)',
+            boxShadow: '0 16px 36px -10px rgba(0, 0, 0, 0.5), 0 2px 10px rgba(0, 0, 0, 0.3)',
           }}
         >
-          {ITENS_PRINCIPAIS.map((item) => (
+          {ITENS_PRINCIPAIS.slice(0, 2).map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[1.1rem] py-2 text-center"
+              style={
+                ativo(item.href)
+                  ? { background: 'var(--color-marca-suave)', color: 'var(--color-marca)' }
+                  : { color: 'var(--color-tinta-suave)' }
+              }
+            >
+              <IconeSvg id={item.icone} />
+              <span className="w-full truncate px-0.5 text-[0.63rem] font-medium leading-tight">
+                {item.rotulo}
+              </span>
+            </Link>
+          ))}
+
+          {/* Vão embaixo do botão "+" elevado — sem link, só espaço reservado. */}
+          <div className="flex-1" aria-hidden />
+
+          {ITENS_PRINCIPAIS.slice(2).map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -174,15 +263,90 @@ export function AppNav({ admin }: { admin: boolean }) {
             <IconeSvg id="mais" />
             <span className="text-[0.63rem] font-medium leading-tight">Mais</span>
           </button>
+
+          {/* Botão "+": ação rápida global, elevado acima da barra — o anel da
+              cor do fundo da página cria o efeito de "recorte" contra a barra. */}
+          <button
+            type="button"
+            onClick={() => setNovoAberto(true)}
+            aria-label="Novo registro"
+            aria-haspopup="dialog"
+            aria-expanded={novoAberto}
+            className="absolute left-1/2 flex h-14 w-14 items-center justify-center rounded-full text-white"
+            style={{
+              top: '-1.05rem',
+              transform: 'translateX(-50%)',
+              background: 'var(--color-marca)',
+              border: '4px solid var(--color-papel)',
+              boxShadow: '0 10px 26px -6px rgba(255, 107, 61, 0.55)',
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
         </div>
       </nav>
+
+      {novoAberto && (
+        <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="Novo registro">
+          <button
+            type="button"
+            aria-label="Fechar"
+            className="absolute inset-0 bg-black/50"
+            onClick={fecharNovo}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 flex max-h-[80vh] flex-col rounded-t-[1.6rem] p-4 pb-[max(env(safe-area-inset-bottom,0px),1.25rem)] shadow-2xl"
+            style={{ background: 'var(--color-papel)' }}
+          >
+            <div className="mx-auto mb-3 h-1.5 w-10 flex-none rounded-full" style={{ background: 'var(--color-borda)' }} />
+
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Novo registro</h2>
+              <button type="button" onClick={fecharNovo} aria-label="Fechar" className="p-1" style={{ color: 'var(--color-tinta-suave)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {ACOES_RAPIDAS.map((acao) => (
+                <Link
+                  key={acao.href}
+                  href={acao.href}
+                  onClick={fecharNovo}
+                  className="flex flex-col items-start gap-3 rounded-[var(--radius-cartao)] p-4"
+                  style={{ background: acao.fundo }}
+                >
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-[0.8rem]"
+                    style={{ background: 'var(--color-papel)', color: acao.cor }}
+                  >
+                    <IconeSvg id={acao.icone} tamanho={20} />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold" style={{ color: 'var(--color-tinta)' }}>
+                      {acao.rotulo}
+                    </span>
+                    <span className="block text-xs" style={{ color: 'var(--color-tinta-suave)' }}>
+                      {acao.descricao}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {maisAberto && (
         <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="Mais opções">
           <button
             type="button"
             aria-label="Fechar"
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/50"
             onClick={fecharMais}
           />
           <div
@@ -220,6 +384,7 @@ export function AppNav({ admin }: { admin: boolean }) {
             </div>
 
             <nav className="flex-1 overflow-y-auto p-1 pt-2">
+              {/* "Admin" só aparece pra quem tem permissão — nunca pro usuário comum. */}
               {admin && (
                 <Link
                   href="/admin"
