@@ -285,6 +285,11 @@ export default async function DashboardPage({
                 </span>
               </p>
               <div
+                role="progressbar"
+                aria-label="Progresso da meta do dia"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.min(100, Math.round(metaDiaria.progresso.percentual ?? 0))}
                 className="mt-2 h-2 overflow-hidden rounded-full"
                 style={{ background: 'var(--color-papel-elevado)' }}
               >
