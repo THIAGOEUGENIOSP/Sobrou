@@ -110,3 +110,48 @@ async function cacheEntaoRede(request, nomeCache) {
   }
   return resposta;
 }
+
+/**
+ * Avisos ativos (manutenção vencendo, reserva curta): o job diário manda o
+ * push, este listener é quem de fato mostra a notificação no aparelho. Sem
+ * isso o navegador recebe o push e não faz nada com ele — `showNotification`
+ * é obrigatório aqui dentro do `waitUntil`, senão o Chrome mostra uma
+ * notificação genérica de "isso aconteceu em segundo plano" no lugar.
+ */
+self.addEventListener('push', (event) => {
+  let dados = { titulo: 'Sobrou', corpo: 'Você tem uma novidade no app.', url: '/app' };
+  try {
+    const recebido = event.data ? event.data.json() : null;
+    if (recebido) dados = { ...dados, ...recebido };
+  } catch {
+    // Payload sem JSON válido: fica com o texto padrão em vez de falhar.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(dados.titulo, {
+      body: dados.corpo,
+      tag: dados.tag,
+      icon: '/icons/icone-192.png',
+      badge: '/icons/icone-192.png',
+      data: { url: dados.url || '/app' },
+    }),
+  );
+});
+
+/** Tocar na notificação abre o app na tela do aviso, reaproveitando uma aba já aberta. */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const destino = event.notification.data?.url || '/app';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((janelas) => {
+      for (const janela of janelas) {
+        if ('focus' in janela) {
+          janela.navigate(destino);
+          return janela.focus();
+        }
+      }
+      return self.clients.openWindow(destino);
+    }),
+  );
+});
