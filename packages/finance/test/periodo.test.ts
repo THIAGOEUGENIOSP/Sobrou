@@ -61,6 +61,15 @@ describe('recortes de período (seção 19)', () => {
   it('o ano começa em 1º de janeiro', () => {
     expect(resolverPeriodo('ano', hoje)).toMatchObject({ de: '2026-01-01', ate: hoje });
   });
+
+  it('"esta semana" é a semana de calendário, segunda a hoje — não os últimos 7 dias', () => {
+    // 2026-09-21 é segunda; a aba "Semanal" do painel não pode mostrar a
+    // semana passada inteira misturada com a atual.
+    expect(resolverPeriodo('semana', '2026-09-21')).toMatchObject({ de: '2026-09-21', ate: '2026-09-21' });
+    expect(resolverPeriodo('semana', '2026-09-24')).toMatchObject({ de: '2026-09-21', ate: '2026-09-24' });
+    // domingo ainda pertence à semana que começou na segunda anterior.
+    expect(resolverPeriodo('semana', '2026-09-27')).toMatchObject({ de: '2026-09-21', ate: '2026-09-27' });
+  });
 });
 
 describe('janela de comparação', () => {
