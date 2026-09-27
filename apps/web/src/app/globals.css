@@ -1,79 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Work+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
 /*
- * Paleta "painel de bordo": pensada pra ser lida de relance, entre corridas,
- * de dia ou de noite. O verde é sempre dinheiro (o que sobrou); o vermelho é
- * sempre despesa; o âmbar é sempre atenção (vence, sobe, vai faltar). Os
- * outros indicadores nunca usam essas cores por decoração — só quando o
- * significado é esse mesmo. A marca (laranja) é diferente: é a cor da
- * identidade do app — botões, destaque, aba ativa — e não carrega
- * significado financeiro por si só, por isso pode ficar separada do verde.
+ * SOBROU — copiloto financeiro do motorista. Dark mode é o único modo: essa
+ * paleta foi desenhada pra tela escura, sem variante clara.
+ *
+ * Semântica de cor (não é decoração, é significado):
+ *  - laranja (marca): identidade do produto — ações principais, aba ativa.
+ *    Não carrega significado financeiro por si só.
+ *  - verde (positivo): dinheiro — faturou, sobrou, lucro, resultado bom.
+ *  - vermelho (alerta): despesa, prejuízo, atenção financeira negativa.
+ *  - âmbar (aviso): atenção neutra — vence, sobe, vai faltar.
+ *  - azul (info): informação auxiliar, sem carga financeira.
+ *  - roxo (margem): reservado pro destaque de "lucro" no Painel antigo —
+ *    será substituído por verde nas próximas fases, mantido aqui só pra não
+ *    quebrar telas que ainda não migraram.
  */
 @theme {
-  --color-tinta: #14181f;
-  --color-tinta-suave: #6b7280;
-  --color-tinta-fraca: #9aa2b1;
-  --color-papel: #f7f7f5;
-  --color-papel-suave: #eeeeea;
-  --color-papel-elevado: #ffffff;
-  --color-borda: #e2e1da;
+  --color-tinta: #f6f7f9;
+  --color-tinta-suave: #929aa8;
+  --color-tinta-fraca: #697180;
+  --color-papel: #0c1016;
+  --color-papel-suave: #151b24;
+  --color-papel-elevado: #1b2330;
+  --color-papel-secundario: #111720;
+  --color-borda: rgba(148, 163, 184, 0.16);
 
-  --color-marca: #f4511e;
-  --color-marca-forte: #d8430f;
-  --color-marca-suave: #fdeae2;
+  --color-marca: #ff6b3d;
+  --color-marca-forte: #ff5a2e;
+  --color-marca-suave: #2a1710;
 
-  --color-aviso: #b4740e;
-  --color-aviso-suave: #fbefdc;
+  --color-aviso: #f4b942;
+  --color-aviso-suave: #332710;
 
-  --color-alerta: #c23b3b;
-  --color-alerta-suave: #fbe7e7;
+  --color-alerta: #ff5c65;
+  --color-alerta-suave: #3a1418;
 
-  --color-positivo: #1f8f63;
-  --color-positivo-suave: #e4f5ec;
+  --color-positivo: #31d392;
+  --color-positivo-suave: #113828;
 
-  /* Só para "margem/lucro" (o que sobrou depois de tudo) — não é decoração,
-     é o terceiro significado do painel, ao lado de verde (faturou) e
-     vermelho (gastou). */
-  --color-margem: #7c5cfc;
-  --color-margem-suave: #ece7fe;
+  --color-info: #4c9fff;
+  --color-info-suave: #12233d;
 
-  --radius-cartao: 1.1rem;
-  --sombra-cartao: 0 1px 2px rgba(20, 24, 31, 0.04), 0 8px 20px -12px rgba(20, 24, 31, 0.12);
-  --fonte-titulo: 'Sora', ui-sans-serif, system-ui, sans-serif;
-  --fonte-texto: 'Work Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Ver nota acima — vira verde (positivo) nas próximas fases. */
+  --color-margem: #8b7cf6;
+  --color-margem-suave: #241c3d;
+
+  --radius-cartao: 1.25rem;
+  --radius-botao: 1.125rem;
+  --sombra-cartao: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 32px -18px rgba(0, 0, 0, 0.6);
+  --fonte-titulo: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fonte-texto: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 :root {
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-tinta: #f1f3f5;
-    --color-tinta-suave: #9ba1ac;
-    --color-tinta-fraca: #6b7280;
-    --color-papel: #0e1218;
-    --color-papel-suave: #171c24;
-    --color-papel-elevado: #1e2530;
-    --color-borda: #2a323f;
-
-    --color-marca: #ff7043;
-    --color-marca-forte: #ff5722;
-    --color-marca-suave: #3a2116;
-
-    --color-aviso: #e0a73b;
-    --color-aviso-suave: #392b10;
-
-    --color-alerta: #e8615f;
-    --color-alerta-suave: #3a1a1a;
-
-    --color-positivo: #3ecf8e;
-    --color-positivo-suave: #163829;
-
-    --color-margem: #9c88ff;
-    --color-margem-suave: #2a2242;
-  }
+  color-scheme: dark;
 }
 
 html,
