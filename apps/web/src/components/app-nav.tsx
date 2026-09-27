@@ -26,7 +26,7 @@ const ITENS_MAIS = [
 /** As 4 ações do botão "+" central — o "registro rápido" global do app. */
 const ACOES_RAPIDAS = [
   {
-    href: '/app/turno',
+    href: '/app/turno/ganho',
     rotulo: 'Adicionar ganho',
     descricao: 'Corrida / Plataforma',
     icone: 'ganho',
