@@ -7,6 +7,7 @@ import {
   formatKm,
   formatLitros,
   formatMoney,
+  formatPercent,
   formatRate,
   formatVariacao,
   type Comparacao,
@@ -57,7 +58,10 @@ export default async function RelatoriosPage({
       </Suspense>
 
       {semDados ? (
-        <div className="rounded-[var(--radius-cartao)] border border-dashed border-[var(--color-borda)] p-6 text-center">
+        <div
+          className="rounded-[var(--radius-cartao)] p-6 text-center"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
           <p className="font-medium">Nada registrado neste período.</p>
           <p className="mt-1 text-sm text-[var(--color-tinta-suave)]">
             Escolha outro intervalo ou{' '}
@@ -76,7 +80,7 @@ export default async function RelatoriosPage({
               comparacao={cmp(t.faturamento, p?.faturamento)}
             />
             <Cartao
-              titulo="Disponível"
+              titulo="Sobrou"
               valor={formatMoney(t.disponivel)}
               comparacao={cmp(t.disponivel, p?.disponivel)}
               destaque
@@ -87,6 +91,38 @@ export default async function RelatoriosPage({
               valor={formatHoras(t.horas)}
               comparacao={cmp(t.horas, p?.horas)}
             />
+          </section>
+
+          <section className="mb-6">
+            <h2 className="mb-3 font-semibold">Seu desempenho</h2>
+            <div className="grid grid-cols-3 gap-2">
+              <CartaoNumero
+                rotulo="R$/hora"
+                valor={formatRate(t.faturamentoPorHora, 'h')}
+                comparacao={cmp(t.faturamentoPorHora ?? 0, p?.faturamentoPorHora ?? undefined)}
+              />
+              <CartaoNumero
+                rotulo="R$/km"
+                valor={formatRate(t.faturamentoPorKm, 'km')}
+                comparacao={cmp(t.faturamentoPorKm ?? 0, p?.faturamentoPorKm ?? undefined)}
+              />
+              <CartaoNumero
+                rotulo="Margem"
+                valor={
+                  t.faturamento > 0
+                    ? formatPercent((t.resultadoOperacional / t.faturamento) * 100, 0)
+                    : '—'
+                }
+                comparacao={
+                  t.faturamento > 0 && p && p.faturamento > 0
+                    ? cmp(
+                        (t.resultadoOperacional / t.faturamento) * 100,
+                        (p.resultadoOperacional / p.faturamento) * 100,
+                      )
+                    : null
+                }
+              />
+            </div>
           </section>
 
           <section className="mb-6">
@@ -140,19 +176,18 @@ export default async function RelatoriosPage({
           {atual.porPlataforma.length > 0 && (
             <section className="mb-6">
               <h2 className="mb-3 font-semibold">Por plataforma</h2>
-              <Barras
-                itens={atual.porPlataforma.map((x) => ({
-                  nome: x.nome,
-                  valor: x.valor,
-                  detalhe: x.corridas > 0 ? `${x.corridas} corridas` : undefined,
-                }))}
-              />
+              <div
+                className="rounded-[var(--radius-cartao)] p-4"
+                style={{ background: 'var(--color-papel-suave)' }}
+              >
+                <DonutPlataformas itens={atual.porPlataforma} />
+              </div>
             </section>
           )}
 
           {atual.porPlataformaDetalhado.length > 0 && (
             <section className="mb-6">
-              <h2 className="mb-1 font-semibold">Rentabilidade por plataforma</h2>
+              <h2 className="mb-1 font-semibold">Onde seu trabalho rendeu mais</h2>
               <p className="mb-3 text-xs text-[var(--color-tinta-suave)]">
                 O custo de cada turno é rateado entre as plataformas na proporção da receita que
                 cada uma trouxe naquele turno — é uma estimativa, não uma medição exata.
@@ -172,7 +207,10 @@ export default async function RelatoriosPage({
           )}
 
           {podeComparar && p && (
-            <section className="mb-6 rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-4">
+            <section
+              className="mb-6 rounded-[var(--radius-cartao)] p-4"
+              style={{ background: 'var(--color-papel-suave)' }}
+            >
               <h2 className="mb-1 font-semibold">Comparado com {periodo.anterior.rotulo}</h2>
               <p className="text-sm text-[var(--color-tinta-suave)]">
                 Faturamento {formatMoney(p.faturamento)} → {formatMoney(t.faturamento)} (
@@ -274,6 +312,82 @@ function CartaoNumero({
           {formatVariacao(comparacao.variacao)}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Rosca de composição: qual fração do faturamento veio de cada plataforma.
+ * Cada fatia usa a mesma cor da categoria em todo o app (Painel, Transações),
+ * então a identidade nunca muda de tela pra tela — e a legenda ao lado nomeia
+ * cada cor, pra não depender só da cor pra diferenciar (seção 6 do guia de
+ * gráficos).
+ */
+function DonutPlataformas({
+  itens,
+}: {
+  itens: Array<{ nome: string; valor: number; cor: string | null; corridas: number }>;
+}) {
+  const total = itens.reduce((a, i) => a + i.valor, 0);
+  if (total <= 0) return null;
+
+  const raio = 54;
+  const circunferencia = 2 * Math.PI * raio;
+  let acumulado = 0;
+  const fatias = itens.map((item) => {
+    const fracao = item.valor / total;
+    const comprimento = fracao * circunferencia;
+    const fatia = { ...item, fracao, comprimento, offset: acumulado };
+    acumulado += comprimento;
+    return fatia;
+  });
+
+  return (
+    <div className="flex items-center gap-5">
+      <svg viewBox="0 0 140 140" width="128" height="128" className="flex-none">
+        <g transform="translate(70,70) rotate(-90)">
+          <circle r={raio} fill="none" stroke="var(--color-papel-elevado)" strokeWidth="20" />
+          {fatias.map((f) => (
+            <circle
+              key={f.nome}
+              r={raio}
+              fill="none"
+              stroke={f.cor ?? 'var(--color-tinta-fraca)'}
+              strokeWidth="20"
+              strokeDasharray={`${f.comprimento} ${circunferencia - f.comprimento}`}
+              strokeDashoffset={-f.offset}
+            />
+          ))}
+        </g>
+        <text
+          x="70"
+          y="66"
+          textAnchor="middle"
+          fontSize="15"
+          fontWeight="700"
+          fill="var(--color-tinta)"
+        >
+          {formatMoney(total)}
+        </text>
+        <text x="70" y="82" textAnchor="middle" fontSize="9" fill="var(--color-tinta-suave)">
+          faturamento
+        </text>
+      </svg>
+      <ul className="min-w-0 flex-1 space-y-2 text-sm">
+        {fatias.map((f) => (
+          <li key={f.nome} className="flex items-center gap-2">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ background: f.cor ?? 'var(--color-tinta-fraca)' }}
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 truncate">{f.nome}</span>
+            <span className="tabular shrink-0 font-medium text-[var(--color-tinta-suave)]">
+              {formatPercent(f.fracao * 100, 0)}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -409,7 +523,10 @@ function GraficoEvolucao({ pontos }: { pontos: PontoDiario[] }) {
   const ultimo = pontos[pontos.length - 1];
 
   return (
-    <div className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-4">
+    <div
+      className="rounded-[var(--radius-cartao)] p-4"
+      style={{ background: 'var(--color-papel-suave)' }}
+    >
       <svg
         viewBox={`0 0 ${largura} ${altura}`}
         className="w-full"
