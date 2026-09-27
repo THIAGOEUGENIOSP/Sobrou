@@ -3,7 +3,6 @@ import { formatMoney } from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { carregarTransacoes, type ItemTransacao } from '@/lib/transacoes/dados';
 import { resolverPeriodoDoUsuario } from '@/lib/relatorios/periodo';
-import { BotaoNovaTransacao } from './botao-nova';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,8 +103,6 @@ export default async function TransacoesPage({
           })}
         </div>
       )}
-
-      <BotaoNovaTransacao />
     </>
   );
 }
