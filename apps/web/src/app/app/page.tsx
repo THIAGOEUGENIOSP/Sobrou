@@ -28,16 +28,17 @@ function Cartao({
 }) {
   return (
     <div
-      className="rounded-[var(--radius-cartao)] border p-4"
-      style={{
-        borderColor: destaque ? 'var(--color-marca)' : 'var(--color-borda)',
-        background: destaque ? 'transparent' : 'var(--color-papel-suave)',
-      }}
+      className="cartao p-4"
+      style={
+        destaque
+          ? { borderColor: 'var(--color-marca)', background: 'var(--color-marca-suave)' }
+          : { background: 'var(--color-papel-suave)' }
+      }
     >
       <p className="text-sm text-[var(--color-tinta-suave)]">{titulo}</p>
       <p
         className="tabular mt-1 text-2xl font-bold"
-        style={destaque ? { color: 'var(--color-marca)' } : undefined}
+        style={destaque ? { color: 'var(--color-marca-forte)' } : undefined}
       >
         {valor}
       </p>
@@ -187,10 +188,11 @@ export default async function DashboardPage() {
       {turnoAberto ? (
         <Link
           href="/app/turno"
-          className="mb-6 flex items-center justify-between gap-3 rounded-[var(--radius-cartao)] border border-[var(--color-marca)] p-4"
+          className="cartao mb-6 flex items-center justify-between gap-3 p-4"
+          style={{ borderColor: 'var(--color-marca)', background: 'var(--color-marca-suave)' }}
         >
           <span>
-            <span className="block font-semibold text-[var(--color-marca)]">
+            <span className="block font-semibold text-[var(--color-marca-forte)]">
               Turno em andamento
             </span>
             <span className="block text-sm text-[var(--color-tinta-suave)]">
@@ -202,14 +204,15 @@ export default async function DashboardPage() {
               . Toque para finalizar.
             </span>
           </span>
-          <span aria-hidden className="text-[var(--color-marca)]">
+          <span aria-hidden className="text-[var(--color-marca-forte)]">
             →
           </span>
         </Link>
       ) : (
         <Link
           href="/app/turno"
-          className="mb-6 block w-full rounded-full bg-[var(--color-marca)] px-6 py-4 text-center font-semibold text-white"
+          className="mb-6 block w-full rounded-full px-6 py-4 text-center font-semibold text-white"
+          style={{ background: 'var(--color-marca)', boxShadow: 'var(--sombra-cartao)' }}
         >
           Iniciar turno
         </Link>
@@ -246,6 +249,28 @@ export default async function DashboardPage() {
           })}
         </section>
       )}
+
+      <Link
+        href="/app/consultor"
+        className="cartao mb-8 flex items-center gap-3 p-4"
+        style={{ background: 'var(--color-aviso-suave)', borderColor: 'transparent' }}
+      >
+        <div
+          className="flex h-9 w-9 flex-none items-center justify-center rounded-[0.65rem]"
+          style={{ background: 'var(--color-papel-elevado)' }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-aviso)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.4.3.6.8.6 1.3V16h5.8v-.8c0-.5.2-1 .6-1.3A6 6 0 0 0 12 3Z" />
+          </svg>
+        </div>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">Seu consultor</span>
+          <span className="block text-xs text-[var(--color-tinta-suave)]">
+            Leituras do seu histórico: custo, melhor dia, projeção do mês.
+          </span>
+        </span>
+        <span aria-hidden className="flex-none text-[var(--color-aviso)]">→</span>
+      </Link>
 
       <section aria-label="Reservas" className="mb-8">
         <h2 className="mb-3 font-semibold">Reservas</h2>
