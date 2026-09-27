@@ -24,9 +24,12 @@ export function Cronometro({ inicio }: { inicio: string }) {
   const texto = agora === null ? '—' : formatar(Math.max(agora - desde, 0));
 
   return (
-    <div className="rounded-[var(--radius-cartao)] border border-[var(--color-marca)] p-6 text-center">
-      <p className="text-sm text-[var(--color-tinta-suave)]">Tempo rodando</p>
-      <p className="tabular mt-1 text-4xl font-bold text-[var(--color-marca)]">{texto}</p>
+    <div
+      className="rounded-[var(--radius-cartao)] p-6 text-center"
+      style={{ background: 'var(--color-marca)' }}
+    >
+      <p className="text-sm font-medium text-black/70">Tempo rodando</p>
+      <p className="tabular mt-1 text-4xl font-extrabold text-black">{texto}</p>
     </div>
   );
 }
