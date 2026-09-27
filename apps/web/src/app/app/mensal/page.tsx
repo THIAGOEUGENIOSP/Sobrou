@@ -61,10 +61,10 @@ export default async function MensalPage() {
             </div>
             <div
               className="rounded-[var(--radius-cartao)] border p-4"
-              style={{ borderColor: 'var(--color-marca)' }}
+              style={{ borderColor: 'var(--color-positivo)' }}
             >
               <p className="text-sm text-[var(--color-tinta-suave)]">Disponível no período</p>
-              <p className="tabular mt-1 text-2xl font-bold" style={{ color: 'var(--color-marca)' }}>
+              <p className="tabular mt-1 text-2xl font-bold" style={{ color: 'var(--color-positivo)' }}>
                 {formatMoney(totalDisponivel)}
               </p>
               <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">
@@ -155,7 +155,7 @@ function GraficoMensalBarras({ meses }: { meses: PontoMensal[] }) {
                 width={larguraBarra}
                 height={alturaFat}
                 rx="2"
-                fill="var(--color-marca)"
+                fill="var(--color-positivo)"
               />
               <rect
                 x={centroX + gapBarras / 2}
@@ -179,7 +179,7 @@ function GraficoMensalBarras({ meses }: { meses: PontoMensal[] }) {
         })}
       </svg>
       <div className="mt-3 flex gap-4 text-xs">
-        <Legenda cor="var(--color-marca)" rotulo="Faturamento" />
+        <Legenda cor="var(--color-positivo)" rotulo="Faturamento" />
         <Legenda cor="var(--color-alerta)" rotulo="Despesas" />
       </div>
     </div>
@@ -228,7 +228,7 @@ function TabelaMensal({ meses }: { meses: PontoMensal[] }) {
                 >
                   {formatMoney(m.totais.resultadoOperacional)}
                 </td>
-                <td className="tabular px-3 py-2 text-right font-semibold" style={{ color: 'var(--color-marca)' }}>
+                <td className="tabular px-3 py-2 text-right font-semibold" style={{ color: 'var(--color-positivo)' }}>
                   {formatMoney(m.totais.disponivel)}
                 </td>
               </tr>
