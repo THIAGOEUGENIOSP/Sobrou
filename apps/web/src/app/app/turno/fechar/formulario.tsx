@@ -9,62 +9,67 @@ import {
   formatLitros,
   formatMoney,
   formatRate,
+  segundosTrabalhados,
   type AllocationConfig,
+  type ShiftRevenue,
 } from '@sobrou/finance';
 import { finalizarTurno } from '@/lib/turnos/actions';
 import { lerNumeroBR } from '@/lib/numeros';
 import { Aviso, BotaoEnviar, Campo } from '@/components/formulario';
 
-type Plataforma = { id: string; name: string; favorita: boolean };
-
 /**
  * Fechamento do dia.
  *
- * A prévia usa exatamente `fecharTurno` do pacote de fórmulas — a mesma
- * função que o servidor vai rodar ao salvar. Por isso o número que o motorista
- * vê aqui é o número que fica gravado, sem surpresa depois do toque.
+ * O faturamento não é mais digitado aqui — já foi lançado corrida a corrida
+ * durante o turno (tela "Adicionar ganho"). Esta tela só confirma o
+ * hodômetro final; a prévia usa exatamente `fecharTurno` do pacote de
+ * fórmulas, a mesma função que o servidor roda ao salvar, para que o número
+ * que aparece aqui seja o número que fica gravado.
  */
 export function FormularioFecharTurno({
   shiftId,
   iniciadoEm,
+  pausedSeconds,
+  pausedAt,
   odoInicial,
   consumo,
   precoCombustivel,
   origemConsumo,
   despesasDoTurno,
-  plataformas,
+  receitas,
   allocation,
 }: {
   shiftId: string;
   iniciadoEm: string;
+  pausedSeconds: number;
+  pausedAt: string | null;
   odoInicial: number;
   consumo: number;
   precoCombustivel: number;
   origemConsumo: 'medido' | 'cadastro' | 'padrao';
   despesasDoTurno: number[];
-  plataformas: Plataforma[];
+  receitas: ShiftRevenue[];
   allocation: AllocationConfig;
 }) {
   const [estado, acao] = useActionState(finalizarTurno, {});
   const [odoFinal, setOdoFinal] = useState('');
-  const [corridas, setCorridas] = useState('');
-  const [valores, setValores] = useState<Record<string, string>>({});
+
+  const faturamentoTotal = receitas.reduce((a, r) => a + r.valor, 0);
 
   const previa = useMemo(() => {
     const odo = lerNumeroBR(odoFinal);
     if (!Number.isFinite(odo) || odo < odoInicial) return null;
-
-    const receitas = plataformas
-      .map((p) => ({ categoryId: p.id, valor: lerNumeroBR(valores[p.id] ?? '') }))
-      .filter((r) => Number.isFinite(r.valor) && r.valor > 0);
-
     if (receitas.length === 0) return null;
+
+    const fim = new Date();
+    const segundosUteis = segundosTrabalhados(iniciadoEm, fim, pausedSeconds, pausedAt);
+    const inicioEfetivo = new Date(fim.getTime() - segundosUteis * 1000);
 
     try {
       return fecharTurno(
         {
-          startedAt: iniciadoEm,
-          endedAt: new Date().toISOString(),
+          startedAt: inicioEfetivo.toISOString(),
+          endedAt: fim.toISOString(),
           odoInicial,
           odoFinal: odo,
           consumo,
@@ -79,24 +84,54 @@ export function FormularioFecharTurno({
     }
   }, [
     odoFinal,
-    valores,
-    plataformas,
+    receitas,
     odoInicial,
     iniciadoEm,
+    pausedSeconds,
+    pausedAt,
     consumo,
     precoCombustivel,
     despesasDoTurno,
     allocation,
   ]);
 
-  const ordenadas = [...plataformas].sort(
-    (a, b) => Number(b.favorita) - Number(a.favorita) || a.name.localeCompare(b.name),
-  );
-
   return (
     <form action={acao} noValidate>
       <input type="hidden" name="shift_id" value={shiftId} />
       {estado.erro && <Aviso tipo="erro">{estado.erro}</Aviso>}
+
+      {receitas.length === 0 ? (
+        <Aviso tipo="erro">
+          Nenhum ganho registrado neste turno ainda.{' '}
+          <a href="/app/turno/ganho" className="underline">
+            Adicione ao menos uma corrida
+          </a>{' '}
+          antes de fechar.
+        </Aviso>
+      ) : (
+        <section
+          className="mb-4 rounded-[var(--radius-cartao)] p-4"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="text-sm font-medium text-[var(--color-tinta-suave)]">
+              Faturamento já lançado
+            </h2>
+            <span className="tabular font-semibold">{formatMoney(faturamentoTotal)}</span>
+          </div>
+          <ul className="space-y-1 text-sm">
+            {receitas.map((r) => (
+              <li key={r.categoryId} className="flex justify-between gap-3">
+                <span className="text-[var(--color-tinta-suave)]">
+                  {r.categoryName ?? 'Receita'}
+                  {r.qtdCorridas ? ` · ${r.qtdCorridas} corridas` : ''}
+                </span>
+                <span className="tabular font-medium">{formatMoney(r.valor)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <Campo
         label="Hodômetro agora"
@@ -107,35 +142,6 @@ export function FormularioFecharTurno({
         value={odoFinal}
         onChange={(e) => setOdoFinal(e.target.value)}
         erro={estado.campos?.odo_final}
-      />
-
-      <fieldset className="mb-4">
-        <legend className="mb-2 text-sm font-medium">Quanto você faturou</legend>
-        <div className="grid gap-2">
-          {ordenadas.map((p) => (
-            <label key={p.id} className="flex items-center gap-3">
-              <span className="w-28 shrink-0 text-sm">{p.name}</span>
-              <input
-                name={`receita_${p.id}`}
-                inputMode="decimal"
-                placeholder="0,00"
-                value={valores[p.id] ?? ''}
-                onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })}
-                className="tabular w-full rounded-xl border border-[var(--color-borda)] bg-[var(--color-papel-suave)] px-4 py-3 text-base"
-              />
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <Campo
-        label="Quantas corridas (opcional)"
-        name="qtd_corridas"
-        inputMode="numeric"
-        placeholder="16"
-        value={corridas}
-        onChange={(e) => setCorridas(e.target.value)}
-        erro={estado.campos?.qtd_corridas}
       />
 
       {previa && (
