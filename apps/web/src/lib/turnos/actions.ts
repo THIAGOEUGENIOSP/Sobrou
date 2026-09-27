@@ -3,11 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { fecharTurno, type ShiftRevenue } from '@sobrou/finance';
+import { fecharTurno, segundosTrabalhados, type ShiftRevenue } from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
-import { dataLocal, numeroComZero, numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
+import { dataLocal, numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
 
 /**
  * Turno: iniciar, lançar despesa no meio e fechar o dia (seções 4, 6, 7 e 12).
@@ -64,6 +64,133 @@ export async function cancelarTurno(formData: FormData): Promise<void> {
 
   revalidatePath('/app');
   redirect('/app');
+}
+
+/** Pausa o turno aberto: marca o instante, para o cronômetro descontar depois. */
+export async function pausarTurno(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '').trim();
+  if (!id) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from('shifts')
+    .update({ paused_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('status', 'aberto')
+    .is('paused_at', null);
+
+  revalidatePath('/app/turno');
+}
+
+/** Retoma um turno pausado: soma o tempo pausado ao acumulado e limpa a marca. */
+export async function retomarTurno(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '').trim();
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { data: turno } = await supabase
+    .from('shifts')
+    .select('paused_at, paused_seconds')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!turno?.paused_at) return;
+
+  const segundosPausa = Math.max(
+    0,
+    Math.round((Date.now() - new Date(turno.paused_at).getTime()) / 1000),
+  );
+
+  await supabase
+    .from('shifts')
+    .update({
+      paused_at: null,
+      paused_seconds: Number(turno.paused_seconds ?? 0) + segundosPausa,
+    })
+    .eq('id', id);
+
+  revalidatePath('/app/turno');
+}
+
+// ---------------------------------------------------------------------------
+
+const ganhoSchema = z.object({
+  shift_id: z.string().uuid(),
+  category_id: z.string().uuid('Escolha a plataforma.'),
+  valor: numeroObrigatorio('Informe o valor.'),
+  qtd_corridas: numeroOpcional('Quantidade de corridas inválida.'),
+  km: numeroOpcional('KM inválido.'),
+  duracao_min: numeroOpcional('Duração inválida.'),
+  nota_passageiro: numeroOpcional('Nota inválida.', { min: 0 }),
+});
+
+/**
+ * Registra uma corrida em tempo real, dentro do turno aberto (seção 6/mockup:
+ * fluxo "Adicionar ganho"). Cada toque grava uma linha em `shift_revenues` —
+ * é essa mesma tabela que, no fechamento, já vem pronta em vez de reperguntar
+ * o faturamento do dia, e é ela que sustenta a tela de "Detalhes da corrida".
+ * Km, duração e nota do passageiro são opcionais: só aparecem depois se o
+ * motorista de fato informar — nunca são inventados.
+ */
+export async function adicionarGanho(_estado: FormState, formData: FormData): Promise<FormState> {
+  const parsed = ganhoSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return erroDeZod(parsed.error);
+
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  const { data: turno } = await supabase
+    .from('shifts')
+    .select('id, status')
+    .eq('id', parsed.data.shift_id)
+    .maybeSingle();
+
+  if (!turno || turno.status !== 'aberto') {
+    return { erro: 'Este turno não está mais aberto.' };
+  }
+
+  const { error } = await supabase.from('shift_revenues').insert({
+    user_id: user.id,
+    shift_id: parsed.data.shift_id,
+    category_id: parsed.data.category_id,
+    valor: parsed.data.valor,
+    qtd_corridas:
+      parsed.data.qtd_corridas !== null ? Math.round(parsed.data.qtd_corridas) : null,
+    km: parsed.data.km,
+    duracao_min: parsed.data.duracao_min,
+    nota_passageiro: parsed.data.nota_passageiro,
+    occurred_at: new Date().toISOString(),
+  });
+
+  if (error) return { erro: 'Não foi possível registrar o ganho.' };
+
+  revalidatePath('/app/turno');
+  redirect('/app/turno');
+}
+
+/** Remove uma corrida lançada por engano — só enquanto o turno está aberto. */
+export async function excluirGanho(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '').trim();
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { data: linha } = await supabase
+    .from('shift_revenues')
+    .select('shift_id')
+    .eq('id', id)
+    .maybeSingle();
+  if (!linha) return;
+
+  const { data: turno } = await supabase
+    .from('shifts')
+    .select('status')
+    .eq('id', linha.shift_id)
+    .maybeSingle();
+  if (turno?.status !== 'aberto') return;
+
+  await supabase.from('shift_revenues').delete().eq('id', id);
+
+  revalidatePath('/app/turno');
 }
 
 // ---------------------------------------------------------------------------
@@ -174,12 +301,17 @@ export async function atualizarTransacao(
 const fecharSchema = z.object({
   shift_id: z.string().uuid(),
   odo_final: numeroObrigatorio('Informe o hodômetro final.'),
-  qtd_corridas: numeroOpcional('Quantidade de corridas inválida.'),
   custo_combustivel_real: numeroOpcional('Valor de combustível inválido.'),
 });
 
 /**
  * Fecha o turno (seção 12).
+ *
+ * O faturamento não é mais reperguntado aqui: cada corrida já foi lançada em
+ * tempo real (`adicionarGanho`), então o fechamento só lê o que já está em
+ * `shift_revenues` e agrupa por plataforma. Isso é o que sustenta a tela de
+ * "Detalhes da corrida" depois — se reperguntássemos o total no fechamento,
+ * o detalhe por corrida se perderia.
  *
  * Toda a matemática sai de `fecharTurno` do pacote de fórmulas — a rota não
  * calcula nada por conta própria. O resultado vira snapshot: alterar consumo
@@ -221,28 +353,31 @@ export async function finalizarTurno(
     };
   }
 
-  // Faturamento por plataforma: campos chamados "receita_<categoria>".
-  const receitas: ShiftRevenue[] = [];
-  const receitasParaBanco: Array<{ category_id: string; valor: number; qtd_corridas: number | null }> = [];
+  // Faturamento: agrupa por plataforma o que já foi lançado corrida a corrida
+  // durante o turno — nada é reperguntado no fechamento.
+  const { data: ganhos } = await supabase
+    .from('shift_revenues')
+    .select('category_id, valor, qtd_corridas')
+    .eq('shift_id', turno.id);
 
-  for (const [chave, valor] of Object.entries(bruto)) {
-    if (!chave.startsWith('receita_') || typeof valor !== 'string') continue;
-    const categoryId = chave.slice('receita_'.length);
-    const parseado = numeroComZero('valor inválido').safeParse(valor);
-    if (!parseado.success || parseado.data <= 0) continue;
-
-    receitas.push({ categoryId, valor: parseado.data });
-    receitasParaBanco.push({ category_id: categoryId, valor: parseado.data, qtd_corridas: null });
+  const porCategoria = new Map<string, { valor: number; qtdCorridas: number | null }>();
+  for (const g of ganhos ?? []) {
+    const atual = porCategoria.get(g.category_id) ?? { valor: 0, qtdCorridas: null };
+    atual.valor += Number(g.valor);
+    if (g.qtd_corridas !== null) {
+      atual.qtdCorridas = (atual.qtdCorridas ?? 0) + Number(g.qtd_corridas);
+    }
+    porCategoria.set(g.category_id, atual);
   }
+
+  const receitas: ShiftRevenue[] = Array.from(porCategoria.entries()).map(
+    ([categoryId, v]) => ({ categoryId, valor: v.valor, qtdCorridas: v.qtdCorridas }),
+  );
 
   if (receitas.length === 0) {
-    return { erro: 'Informe quanto você faturou em pelo menos uma plataforma.' };
-  }
-
-  // A quantidade de corridas é do dia, não por plataforma: fica na primeira.
-  if (parsed.data.qtd_corridas !== null && receitasParaBanco[0]) {
-    receitasParaBanco[0].qtd_corridas = Math.round(parsed.data.qtd_corridas);
-    receitas[0]!.qtdCorridas = Math.round(parsed.data.qtd_corridas);
+    return {
+      erro: 'Nenhum ganho registrado neste turno ainda. Adicione ao menos uma corrida antes de fechar.',
+    };
   }
 
   // Despesas já lançadas dentro do turno.
@@ -258,9 +393,20 @@ export async function finalizarTurno(
 
   const fim = new Date();
 
+  // O relógio exclui o tempo em pausa: a hora inicial "efetiva" é empurrada
+  // para frente pelo total pausado, sem alterar o `started_at` gravado (ele
+  // continua servindo para o "Começou às HH:MM" em outras telas).
+  const segundosUteis = segundosTrabalhados(
+    turno.started_at,
+    fim,
+    Number(turno.paused_seconds ?? 0),
+    turno.paused_at,
+  );
+  const inicioEfetivo = new Date(fim.getTime() - segundosUteis * 1000);
+
   const fechamento = fecharTurno(
     {
-      startedAt: turno.started_at,
+      startedAt: inicioEfetivo.toISOString(),
       endedAt: fim.toISOString(),
       odoInicial: Number(turno.odo_inicial),
       odoFinal: parsed.data.odo_final,
@@ -294,7 +440,10 @@ export async function finalizarTurno(
       reserva_emerg: fechamento.snapshot.reservaEmergencia,
       disponivel: fechamento.snapshot.disponivel,
     },
-    p_receitas: receitasParaBanco,
+    // Vazio de propósito: as linhas já estão em `shift_revenues` desde que
+    // foram lançadas em tempo real, e a RPC só apaga+reinsere quando este
+    // array vem não-vazio — ver migração `fechar_turno_preserve_live_receitas`.
+    p_receitas: [],
     p_creditos: fechamento.creditosReserva.map((c) => ({
       reserve_kind: c.reserveKind,
       valor: c.valor,
