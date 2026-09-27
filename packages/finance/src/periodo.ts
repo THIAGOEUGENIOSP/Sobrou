@@ -10,6 +10,7 @@
 export type ChavePeriodo =
   | 'hoje'
   | 'ontem'
+  | 'semana'
   | 'sete_dias'
   | 'trinta_dias'
   | 'mes'
@@ -30,6 +31,7 @@ export interface Periodo {
 export const PERIODOS: ReadonlyArray<{ chave: ChavePeriodo; rotulo: string }> = [
   { chave: 'hoje', rotulo: 'Hoje' },
   { chave: 'ontem', rotulo: 'Ontem' },
+  { chave: 'semana', rotulo: 'Esta semana' },
   { chave: 'sete_dias', rotulo: '7 dias' },
   { chave: 'trinta_dias', rotulo: '30 dias' },
   { chave: 'mes', rotulo: 'Este mês' },
@@ -116,6 +118,16 @@ export function resolverPeriodo(
       de = ate = somarDias(hoje, -1);
       rotulo = 'Ontem';
       break;
+    case 'semana': {
+      // Semana de calendário, segunda a domingo — não "últimos 7 dias"
+      // rolando. É a mesma semana que a meta semanal usa: sem isso, o card
+      // trocaria de conteúdo mas continuaria dando outro número.
+      const diaDaSemana = h.getUTCDay(); // 0 = domingo
+      const desdeSegunda = diaDaSemana === 0 ? 6 : diaDaSemana - 1;
+      de = somarDias(hoje, -desdeSegunda);
+      rotulo = 'Esta semana';
+      break;
+    }
     case 'sete_dias':
       de = somarDias(hoje, -6);
       rotulo = 'Últimos 7 dias';
