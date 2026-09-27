@@ -1,9 +1,14 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { formatConsumo, formatMoney, formatRate } from '@sobrou/finance';
+import {
+  custoCombustivelEstimado,
+  formatConsumo,
+  formatMoney,
+  formatRate,
+} from '@sobrou/finance';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
-import { cancelarTurno, excluirTransacao } from '@/lib/turnos/actions';
+import { cancelarTurno, excluirTransacao, pausarTurno, retomarTurno } from '@/lib/turnos/actions';
 import { FormularioIniciarTurno } from './iniciar';
 import { Cronometro } from './cronometro';
 
@@ -80,25 +85,60 @@ export default async function TurnoPage() {
     );
   }
 
-  const { data: despesas } = await supabase
-    .from('transactions')
-    .select('id, valor, description, category_id, occurred_at')
-    .eq('shift_id', turno.id)
-    .eq('kind', 'despesa')
-    .order('occurred_at', { ascending: false });
-
-  const { data: categorias } = await supabase
-    .from('categories')
-    .select('id, name')
-    .is('archived_at', null);
+  const [{ data: despesas }, { data: categorias }, { data: ganhos }] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('id, valor, description, category_id, occurred_at')
+      .eq('shift_id', turno.id)
+      .eq('kind', 'despesa')
+      .order('occurred_at', { ascending: false }),
+    supabase.from('categories').select('id, name').is('archived_at', null),
+    supabase
+      .from('shift_revenues')
+      .select('id, category_id, valor, qtd_corridas, occurred_at, km')
+      .eq('shift_id', turno.id)
+      .order('occurred_at', { ascending: false }),
+  ]);
 
   const nomeCategoria = new Map((categorias ?? []).map((c) => [c.id, c.name]));
   const totalDespesas = (despesas ?? []).reduce((a, d) => a + Number(d.valor), 0);
 
+  const listaGanhos = ganhos ?? [];
+  const faturamento = listaGanhos.reduce((a, g) => a + Number(g.valor), 0);
+  const totalCorridas = listaGanhos.reduce((a, g) => a + (g.qtd_corridas ?? 0), 0);
+
+  // Km só entra na estimativa quando pelo menos uma corrida informou km —
+  // nunca chutado a partir do faturamento ou do histórico.
+  const kmInformado = listaGanhos.reduce((a, g) => a + (g.km !== null ? Number(g.km) : 0), 0);
+  const temKm = listaGanhos.some((g) => g.km !== null);
+  const combustivelEstimado = temKm
+    ? custoCombustivelEstimado(kmInformado, parametros.consumo, parametros.preco)
+    : null;
+
+  const resultadoEstimado =
+    faturamento - totalDespesas - (combustivelEstimado ?? 0);
+
+  const segundosDecorridos = Math.max(
+    0,
+    (Date.now() - new Date(turno.started_at).getTime()) / 1000 -
+      Number(turno.paused_seconds ?? 0) -
+      (turno.paused_at ? (Date.now() - new Date(turno.paused_at).getTime()) / 1000 : 0),
+  );
+  const faturamentoPorHora =
+    segundosDecorridos > 60 ? faturamento / (segundosDecorridos / 3600) : null;
+
+  const pausado = Boolean(turno.paused_at);
+
   return (
     <>
-      <h1 className="mb-1 text-xl font-bold">Turno em andamento</h1>
-      <p className="mb-6 text-sm text-[var(--color-tinta-suave)]">
+      <div className="mb-1 flex items-center gap-2">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ background: pausado ? 'var(--color-aviso)' : 'var(--color-positivo)' }}
+        />
+        <h1 className="text-xl font-bold">{pausado ? 'Turno pausado' : 'Rodando agora'}</h1>
+      </div>
+      <p className="mb-4 text-sm text-[var(--color-tinta-suave)]">
         Começou às{' '}
         {new Date(turno.started_at).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
@@ -108,9 +148,57 @@ export default async function TurnoPage() {
         , com {Number(turno.odo_inicial).toLocaleString('pt-BR')} km no hodômetro.
       </p>
 
-      <Cronometro inicio={turno.started_at} />
+      <Cronometro
+        inicio={turno.started_at}
+        pausedSeconds={Number(turno.paused_seconds ?? 0)}
+        pausedAt={turno.paused_at}
+      />
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <section
+        className="mt-5 rounded-[var(--radius-cartao)] p-5"
+        style={{ background: 'var(--color-positivo)' }}
+      >
+        <p className="text-sm font-medium text-black/70">Faturamento até agora</p>
+        <p className="tabular mt-1 text-4xl font-extrabold text-black">
+          {formatMoney(faturamento)}
+        </p>
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-sm text-black/70">
+          <span>
+            {totalCorridas > 0 ? `${totalCorridas} corridas` : `${listaGanhos.length} lançamentos`}
+          </span>
+          <span>
+            {faturamentoPorHora !== null
+              ? `${formatRate(faturamentoPorHora, 'h')}`
+              : 'R$/h em instantes'}
+          </span>
+        </div>
+      </section>
+
+      <section
+        className="mt-3 rounded-[var(--radius-cartao)] p-5"
+        style={{ background: 'var(--color-papel-suave)' }}
+      >
+        <h2 className="mb-2 text-sm font-medium text-[var(--color-tinta-suave)]">
+          Resultado estimado
+        </h2>
+        <p className="tabular text-2xl font-bold">{formatMoney(resultadoEstimado)}</p>
+        <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
+          Faturamento − despesas do turno
+          {combustivelEstimado !== null
+            ? ` − combustível estimado (${formatMoney(combustivelEstimado)}, pelo km informado nas corridas)`
+            : ' — combustível ainda não entra na conta: nenhuma corrida informou km rodado'}
+          .
+        </p>
+      </section>
+
+      <Link
+        href="/app/turno/ganho"
+        className="mt-5 block w-full rounded-full bg-[var(--color-marca)] px-6 py-4 text-center font-semibold text-white"
+      >
+        + Adicionar ganho
+      </Link>
+
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <Link
           href="/app/abastecimentos/novo"
           className="rounded-[var(--radius-cartao)] p-4 text-center font-medium"
@@ -126,6 +214,68 @@ export default async function TurnoPage() {
           + Despesa
         </Link>
       </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <form action={pausado ? retomarTurno : pausarTurno}>
+          <input type="hidden" name="id" value={turno.id} />
+          <button
+            type="submit"
+            className="w-full rounded-full border px-6 py-3 text-center font-medium"
+            style={{ borderColor: 'var(--color-borda)' }}
+          >
+            {pausado ? 'Retomar' : 'Pausar'}
+          </button>
+        </form>
+        <Link
+          href="/app/turno/fechar"
+          className="rounded-full px-6 py-3 text-center font-semibold text-white"
+          style={{ background: 'var(--color-tinta)' }}
+        >
+          Encerrar turno
+        </Link>
+      </div>
+
+      {listaGanhos.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 flex items-baseline justify-between font-semibold">
+            <span>Registro rápido</span>
+            <span className="tabular text-sm font-normal text-[var(--color-tinta-suave)]">
+              {formatMoney(faturamento)}
+            </span>
+          </h2>
+          <ul className="space-y-2">
+            {listaGanhos.slice(0, 3).map((g) => (
+              <li key={g.id}>
+                <Link
+                  href={`/app/turno/corrida/${g.id}`}
+                  className="flex items-center justify-between gap-3 rounded-[var(--radius-cartao)] p-3"
+                  style={{ background: 'var(--color-papel-elevado)' }}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">
+                      {nomeCategoria.get(g.category_id) ?? 'Corrida'}
+                    </span>
+                    <span className="block truncate text-sm text-[var(--color-tinta-suave)]">
+                      {new Date(g.occurred_at).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        timeZone: ctx.timezone,
+                      })}
+                      {g.qtd_corridas ? ` · ${g.qtd_corridas} corridas` : ''}
+                    </span>
+                  </span>
+                  <span
+                    className="tabular shrink-0 font-semibold"
+                    style={{ color: 'var(--color-positivo)' }}
+                  >
+                    + {formatMoney(Number(g.valor))}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {(despesas ?? []).length > 0 && (
         <section className="mt-8">
@@ -173,14 +323,7 @@ export default async function TurnoPage() {
         </section>
       )}
 
-      <Link
-        href="/app/turno/fechar"
-        className="mt-8 block w-full rounded-full bg-[var(--color-marca)] px-6 py-4 text-center font-semibold text-white"
-      >
-        Finalizar turno
-      </Link>
-
-      <form action={cancelarTurno} className="mt-3">
+      <form action={cancelarTurno} className="mt-8">
         <input type="hidden" name="id" value={turno.id} />
         <button
           type="submit"
