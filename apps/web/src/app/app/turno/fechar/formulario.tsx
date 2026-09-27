@@ -139,60 +139,82 @@ export function FormularioFecharTurno({
       />
 
       {previa && (
-        <section className="mb-6 rounded-[var(--radius-cartao)] border border-[var(--color-marca)] p-5">
-          <h2 className="mb-3 font-semibold">Resumo de hoje</h2>
-
-          <dl className="space-y-1.5 text-sm">
-            <Linha rotulo="Faturamento" valor={formatMoney(previa.turno.faturamento)} />
-            <Linha rotulo="Horas trabalhadas" valor={formatHoras(previa.turno.horas)} />
-            <Linha rotulo="KM rodados" valor={formatKm(previa.turno.km)} />
-            <Linha
-              rotulo="Média"
-              valor={`${formatConsumo(consumo)}${origemConsumo === 'medido' ? '' : ' (estimado)'}`}
-            />
-            <Linha rotulo="Combustível consumido" valor={formatLitros(previa.turno.litros)} />
-            <Linha rotulo="Custo do combustível" valor={formatMoney(previa.turno.custoCombustivel)} />
-            <Linha
-              rotulo="Custo combustível/km"
-              valor={formatRate(previa.turno.combustivelPorKm, 'km')}
-            />
-            <Linha rotulo="Faturamento/km" valor={formatRate(previa.turno.faturamentoPorKm, 'km')} />
-            <Linha rotulo="Faturamento/hora" valor={formatRate(previa.turno.faturamentoPorHora, 'h')} />
-            <Linha rotulo="Outras despesas" valor={formatMoney(previa.turno.outrasDespesas)} />
-
-            <div className="!mt-3 border-t border-[var(--color-borda)] pt-3">
-              <Linha
-                rotulo={`Reserva do carro (${allocation.pctVeiculo}%)`}
-                valor={formatMoney(previa.distribuicao.reservaVeiculo)}
-              />
-              <Linha
-                rotulo={`Emergência (${allocation.pctEmergencia}%)`}
-                valor={formatMoney(previa.distribuicao.reservaEmergencia)}
-              />
-            </div>
-          </dl>
-
-          <div className="mt-4 border-t border-[var(--color-borda)] pt-4">
-            <p className="text-sm text-[var(--color-tinta-suave)]">
-              {previa.distribuicao.prejuizo ? 'Prejuízo do dia' : 'Valor disponível'}
-            </p>
-            <p
-              className="tabular text-3xl font-bold"
+        <>
+          {/* Mesma linguagem visual do resumo pós-fechamento e do Painel: o que
+              sobra primeiro, com faturamento/combustível como subinformação —
+              verde/vermelho carregam o resultado, nunca a cor de marca. */}
+          <section className="mb-3">
+            <div
+              className="rounded-[var(--radius-cartao)] p-5"
               style={{
-                color: previa.distribuicao.prejuizo
+                background: previa.distribuicao.prejuizo
                   ? 'var(--color-alerta)'
-                  : 'var(--color-marca)',
+                  : 'var(--color-positivo)',
               }}
             >
-              {formatMoney(previa.distribuicao.disponivel)}
-            </p>
-            {previa.distribuicao.prejuizo && (
-              <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">
-                Dia no vermelho: nada é reservado, porque não há o que guardar.
+              <p className="text-sm font-medium text-black/70">
+                {previa.distribuicao.prejuizo ? 'Prejuízo do dia' : 'Sobra hoje'}
               </p>
-            )}
-          </div>
-        </section>
+              <p className="tabular mt-1 text-4xl font-extrabold text-black">
+                {formatMoney(previa.distribuicao.disponivel)}
+              </p>
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-sm text-black/70">
+                <span>
+                  Faturamento{' '}
+                  <strong className="text-black">{formatMoney(previa.turno.faturamento)}</strong>
+                </span>
+                <span>
+                  Combustível{' '}
+                  <strong className="text-black">
+                    {formatMoney(previa.turno.custoCombustivel)}
+                  </strong>
+                </span>
+              </div>
+              {previa.distribuicao.prejuizo && (
+                <p className="mt-2 text-xs text-black/70">
+                  Dia no vermelho: nada é reservado, porque não há o que guardar.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section
+            className="mb-6 rounded-[var(--radius-cartao)] p-5"
+            style={{ background: 'var(--color-papel-suave)' }}
+          >
+            <h2 className="mb-3 font-semibold">Resumo de hoje</h2>
+            <dl className="space-y-1.5 text-sm">
+              <Linha rotulo="Horas trabalhadas" valor={formatHoras(previa.turno.horas)} />
+              <Linha rotulo="KM rodados" valor={formatKm(previa.turno.km)} />
+              <Linha
+                rotulo="Média"
+                valor={`${formatConsumo(consumo)}${origemConsumo === 'medido' ? '' : ' (estimado)'}`}
+              />
+              <Linha rotulo="Combustível consumido" valor={formatLitros(previa.turno.litros)} />
+              <Linha
+                rotulo="Custo combustível/km"
+                valor={formatRate(previa.turno.combustivelPorKm, 'km')}
+              />
+              <Linha rotulo="Faturamento/km" valor={formatRate(previa.turno.faturamentoPorKm, 'km')} />
+              <Linha
+                rotulo="Faturamento/hora"
+                valor={formatRate(previa.turno.faturamentoPorHora, 'h')}
+              />
+              <Linha rotulo="Outras despesas" valor={formatMoney(previa.turno.outrasDespesas)} />
+
+              <div className="!mt-3 border-t border-[var(--color-borda)] pt-3">
+                <Linha
+                  rotulo={`Reserva do carro (${allocation.pctVeiculo}%)`}
+                  valor={formatMoney(previa.distribuicao.reservaVeiculo)}
+                />
+                <Linha
+                  rotulo={`Emergência (${allocation.pctEmergencia}%)`}
+                  valor={formatMoney(previa.distribuicao.reservaEmergencia)}
+                />
+              </div>
+            </dl>
+          </section>
+        </>
       )}
 
       <BotaoEnviar>Fechar o dia</BotaoEnviar>
