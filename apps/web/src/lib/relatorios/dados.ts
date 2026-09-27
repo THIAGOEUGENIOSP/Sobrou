@@ -1,6 +1,13 @@
 import 'server-only';
 
-import { agregarPeriodo, type PeriodTotals, type ShiftSnapshot } from '@sobrou/finance';
+import {
+  agregarPeriodo,
+  porPlataforma,
+  serieDiaria,
+  type PeriodTotals,
+  type PontoDiario,
+  type ShiftSnapshot,
+} from '@sobrou/finance';
 import { createClient } from '@/lib/supabase/server';
 import { historyFloor } from '@/lib/entitlements';
 
@@ -29,6 +36,20 @@ export interface DadosPeriodo {
   }>;
   /** Faturamento por plataforma no período. */
   porPlataforma: Array<{ nome: string; valor: number; corridas: number }>;
+  /**
+   * Rentabilidade por plataforma: custo do turno rateado pela participação
+   * na receita, não só o quanto cada uma pagou.
+   */
+  porPlataformaDetalhado: Array<{
+    nome: string;
+    valor: number;
+    corridas: number;
+    margem: number;
+    margemPorKm: number | null;
+    margemPorHora: number | null;
+  }>;
+  /** Resultado operacional e disponível dia a dia, para o gráfico de evolução. */
+  serie: PontoDiario[];
   /** Despesas por categoria no período. */
   porCategoria: Array<{ nome: string; valor: number }>;
   /** true quando o plano cortou parte do período pedido. */
@@ -133,12 +154,41 @@ export async function carregarPeriodo(de: string, ate: string): Promise<DadosPer
     categoriasDespesa.set(id, (categoriasDespesa.get(id) ?? 0) + Number(d.valor));
   }
 
+  const turnosParaPlataforma = (turnos ?? []).map((t) => ({
+    id: t.id,
+    km: Number(t.snap_km ?? 0),
+    horas: Number(t.snap_horas ?? 0),
+    faturamento: Number(t.snap_faturamento ?? 0),
+    custoCombustivel: Number(t.snap_custo_combustivel ?? 0),
+    outrasDespesas: Number(t.snap_outras_despesas ?? 0),
+  }));
+
+  const receitasNoPeriodo = (receitasTurno ?? [])
+    .filter((r) => idsNoPeriodo.has(r.shift_id))
+    .map((r) => ({
+      shiftId: r.shift_id,
+      categoryId: r.category_id,
+      valor: Number(r.valor),
+      corridas: r.qtd_corridas,
+    }));
+
+  const detalhamento = porPlataforma(turnosParaPlataforma, receitasNoPeriodo);
+
   return {
     totais,
     turnos: turnos ?? [],
     porPlataforma: [...plataformas.entries()]
       .map(([id, v]) => ({ nome: nome.get(id) ?? 'Receita', ...v }))
       .sort((a, b) => b.valor - a.valor),
+    porPlataformaDetalhado: detalhamento.map((d) => ({
+      nome: nome.get(d.categoryId) ?? 'Receita',
+      valor: d.valor,
+      corridas: d.corridas,
+      margem: d.margem,
+      margemPorKm: d.margemPorKm,
+      margemPorHora: d.margemPorHora,
+    })),
+    serie: serieDiaria(snapshots),
     porCategoria: [...categoriasDespesa.entries()]
       .map(([id, valor]) => ({ nome: nome.get(id) ?? 'Despesa', valor }))
       .sort((a, b) => b.valor - a.valor),
