@@ -1,41 +1,56 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { segundosTrabalhados } from '@sobrou/finance';
 
 /**
- * Tempo decorrido do turno.
+ * Tempo decorrido do turno, descontando pausas.
  *
  * Conta a partir do horário gravado no servidor, não de um contador local:
  * se o motorista fechar o app ou o celular descarregar, ao voltar o número
- * continua certo.
+ * continua certo. Quando o turno está pausado, o relógio para de andar sem
+ * precisar de nada especial no servidor — a pausa em si já é o que impede o
+ * segundo de subir.
+ *
+ * Sem cartão colorido: no mockup o cronômetro é só texto, junto do resto do
+ * cabeçalho — quem carrega cor é o cartão de faturamento, embaixo.
  */
-export function Cronometro({ inicio }: { inicio: string }) {
-  const desde = new Date(inicio).getTime();
+export function Cronometro({
+  inicio,
+  pausedSeconds,
+  pausedAt,
+}: {
+  inicio: string;
+  pausedSeconds: number;
+  pausedAt: string | null;
+}) {
   const [agora, setAgora] = useState<number | null>(null);
 
   useEffect(() => {
     setAgora(Date.now());
+    if (pausedAt) return; // parado: não precisa de intervalo re-renderizando à toa.
     const id = setInterval(() => setAgora(Date.now()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [pausedAt]);
 
   // Na primeira renderização no servidor não há relógio do cliente; mostramos
   // um traço em vez de um valor que mudaria na hidratação.
-  const texto = agora === null ? '—' : formatar(Math.max(agora - desde, 0));
+  const segundos =
+    agora === null ? null : segundosTrabalhados(inicio, new Date(agora), pausedSeconds, pausedAt);
+  const texto = segundos === null ? '—' : formatar(segundos);
 
   return (
-    <div
-      className="rounded-[var(--radius-cartao)] p-6 text-center"
-      style={{ background: 'var(--color-marca)' }}
-    >
-      <p className="text-sm font-medium text-black/70">Tempo rodando</p>
-      <p className="tabular mt-1 text-4xl font-extrabold text-black">{texto}</p>
+    <div>
+      <p className="text-sm font-medium text-[var(--color-tinta-suave)]">
+        {pausedAt ? 'Pausado' : 'Tempo rodando'}
+      </p>
+      <p className="tabular mt-0.5 text-3xl font-extrabold">{texto}</p>
     </div>
   );
 }
 
-function formatar(ms: number): string {
-  const total = Math.floor(ms / 1000);
+function formatar(segundos: number): string {
+  const total = Math.floor(segundos);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
