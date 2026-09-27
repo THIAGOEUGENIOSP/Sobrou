@@ -9,8 +9,8 @@ import { BotaoSair } from '@/components/botao-sair';
 const ITENS_PRINCIPAIS = [
   { href: '/app', rotulo: 'Painel', icone: 'dia' },
   { href: '/app/turno', rotulo: 'Turno', icone: 'turno' },
+  { href: '/app/transacoes', rotulo: 'Transações', icone: 'transacoes' },
   { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
-  { href: '/app/mensal', rotulo: 'Mês a mês', icone: 'mensal' },
 ] as const;
 
 /** O resto — menos usado no dia a dia — mora atrás do botão "Mais". */
@@ -18,6 +18,7 @@ const ITENS_MAIS = [
   { href: '/app/consultor', rotulo: 'Consultor', icone: 'consultor' },
   { href: '/app/abastecimentos', rotulo: 'Posto', icone: 'posto' },
   { href: '/app/reservas', rotulo: 'Reservas', icone: 'reservas' },
+  { href: '/app/mensal', rotulo: 'Mês a mês', icone: 'mensal' },
 ] as const;
 
 type Icone =
@@ -49,6 +50,12 @@ const ICONES: Record<Icone, React.ReactNode> = {
     </>
   ),
   relatorios: <path d="M4 19V10M10 19V5M16 19v-7M3 19h18" />,
+  transacoes: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M8.5 8h7M8.5 12h7M8.5 16h4" />
+    </>
+  ),
   mensal: (
     <>
       <rect x="4" y="12" width="3.4" height="7" rx="0.8" />
@@ -193,7 +200,7 @@ export function AppNav({ admin }: { admin: boolean }) {
               </button>
             </div>
 
-            <div className="mb-1 grid grid-cols-3 gap-2 px-1">
+            <div className="mb-1 grid grid-cols-2 gap-2 px-1">
               {ITENS_MAIS.map((item) => (
                 <Link
                   key={item.href}
