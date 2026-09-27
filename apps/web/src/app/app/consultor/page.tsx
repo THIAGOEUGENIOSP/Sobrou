@@ -118,6 +118,11 @@ export default async function ConsultorPage() {
                       </span>
                     </div>
                     <div
+                      role="progressbar"
+                      aria-label="Nota de saúde financeira"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={nota}
                       className="h-2.5 overflow-hidden rounded-full"
                       style={{ background: 'var(--color-papel-suave)' }}
                     >
