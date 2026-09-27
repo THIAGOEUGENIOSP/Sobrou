@@ -91,39 +91,39 @@ export default async function RelatoriosPage({
 
           <section className="mb-6">
             <h2 className="mb-3 font-semibold">Números do período</h2>
-            <dl className="divide-y divide-[var(--color-borda)] rounded-[var(--radius-cartao)] border border-[var(--color-borda)] text-sm">
-              <Linha rotulo="Dias trabalhados" valor={String(t.diasTrabalhados)} />
-              <Linha rotulo="Turnos" valor={String(t.turnos)} />
+            <div className="grid grid-cols-2 gap-2">
+              <CartaoNumero rotulo="Dias trabalhados" valor={String(t.diasTrabalhados)} />
+              <CartaoNumero rotulo="Turnos" valor={String(t.turnos)} />
               {t.qtdCorridas !== null && (
-                <Linha rotulo="Corridas" valor={String(t.qtdCorridas)} />
+                <CartaoNumero rotulo="Corridas" valor={String(t.qtdCorridas)} />
               )}
-              <Linha rotulo="Litros abastecidos" valor={formatLitros(t.litrosAbastecidos)} />
-              <Linha rotulo="Gasto com combustível" valor={formatMoney(t.gastoCombustivelReal)} />
-              <Linha rotulo="Preço médio do litro" valor={formatRate(t.precoMedioLitro, 'L')} />
-              <Linha rotulo="Consumo médio" valor={formatConsumo(t.consumoMedio)} />
-              <Linha
+              <CartaoNumero rotulo="Litros abastecidos" valor={formatLitros(t.litrosAbastecidos)} />
+              <CartaoNumero rotulo="Gasto com combustível" valor={formatMoney(t.gastoCombustivelReal)} />
+              <CartaoNumero rotulo="Preço médio do litro" valor={formatRate(t.precoMedioLitro, 'L')} />
+              <CartaoNumero rotulo="Consumo médio" valor={formatConsumo(t.consumoMedio)} />
+              <CartaoNumero
                 rotulo="Faturamento por km"
                 valor={formatRate(t.faturamentoPorKm, 'km')}
                 comparacao={cmp(t.faturamentoPorKm ?? 0, p?.faturamentoPorKm ?? undefined)}
               />
-              <Linha
+              <CartaoNumero
                 rotulo="Faturamento por hora"
                 valor={formatRate(t.faturamentoPorHora, 'h')}
                 comparacao={cmp(t.faturamentoPorHora ?? 0, p?.faturamentoPorHora ?? undefined)}
               />
-              <Linha
+              <CartaoNumero
                 rotulo="Custo combustível por km"
                 valor={formatRate(t.custoCombustivelPorKm, 'km')}
               />
-              <Linha rotulo="Outras despesas" valor={formatMoney(t.outrasDespesas)} />
+              <CartaoNumero rotulo="Outras despesas" valor={formatMoney(t.outrasDespesas)} />
               {t.outrasReceitas > 0 && (
-                <Linha rotulo="Receitas fora de turno" valor={formatMoney(t.outrasReceitas)} />
+                <CartaoNumero rotulo="Receitas fora de turno" valor={formatMoney(t.outrasReceitas)} />
               )}
-              <Linha rotulo="Resultado operacional" valor={formatMoney(t.resultadoOperacional)} />
-              <Linha rotulo="Reservado para o carro" valor={formatMoney(t.reservaVeiculo)} />
-              <Linha rotulo="Reservado para emergência" valor={formatMoney(t.reservaEmergencia)} />
-              <Linha rotulo="Manutenção realizada" valor={formatMoney(t.manutencaoRealizada)} />
-            </dl>
+              <CartaoNumero rotulo="Resultado operacional" valor={formatMoney(t.resultadoOperacional)} />
+              <CartaoNumero rotulo="Reservado para o carro" valor={formatMoney(t.reservaVeiculo)} />
+              <CartaoNumero rotulo="Reservado para emergência" valor={formatMoney(t.reservaEmergencia)} />
+              <CartaoNumero rotulo="Manutenção realizada" valor={formatMoney(t.manutencaoRealizada)} />
+            </div>
             <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
               Reservado é o que foi separado no período; manutenção realizada é o que saiu de fato.
               Os dois não se anulam.
@@ -244,7 +244,9 @@ function Cartao({
   );
 }
 
-function Linha({
+/** Card quadrado pra um número do período — mesmo padrão do bloco de métricas
+ * do Painel, no lugar da lista em linhas que ficava alta e monótona de rolar. */
+function CartaoNumero({
   rotulo,
   valor,
   comparacao,
@@ -254,26 +256,24 @@ function Linha({
   comparacao?: Comparacao | null;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 px-4 py-2.5">
-      <dt className="text-[var(--color-tinta-suave)]">{rotulo}</dt>
-      <dd className="tabular shrink-0 font-medium">
-        {valor}
-        {comparacao?.variacao != null && (
-          <span
-            className="ml-2 text-xs font-normal"
-            style={{
-              color:
-                comparacao.direcao === 'alta'
-                  ? 'var(--color-positivo)'
-                  : comparacao.direcao === 'baixa'
-                    ? 'var(--color-alerta)'
-                    : 'var(--color-tinta-suave)',
-            }}
-          >
-            {formatVariacao(comparacao.variacao)}
-          </span>
-        )}
-      </dd>
+    <div className="rounded-[var(--radius-cartao)] p-3" style={{ background: 'var(--color-papel-suave)' }}>
+      <p className="text-xs text-[var(--color-tinta-suave)]">{rotulo}</p>
+      <p className="tabular mt-0.5 font-bold">{valor}</p>
+      {comparacao?.variacao != null && (
+        <p
+          className="tabular mt-0.5 text-xs"
+          style={{
+            color:
+              comparacao.direcao === 'alta'
+                ? 'var(--color-positivo)'
+                : comparacao.direcao === 'baixa'
+                  ? 'var(--color-alerta)'
+                  : 'var(--color-tinta-suave)',
+          }}
+        >
+          {formatVariacao(comparacao.variacao)}
+        </p>
+      )}
     </div>
   );
 }
