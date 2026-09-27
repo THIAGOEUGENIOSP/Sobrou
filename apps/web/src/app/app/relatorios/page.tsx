@@ -17,6 +17,7 @@ import { carregarContexto } from '@/lib/dados/contexto';
 import { carregarPeriodo } from '@/lib/relatorios/dados';
 import { resolverPeriodoDoUsuario, type ChavePeriodo } from '@/lib/relatorios/periodo';
 import { can } from '@/lib/entitlements';
+import { BotaoSino } from '@/components/cabecalho';
 import { FiltrosPeriodo } from './filtros';
 import { BotoesExportar } from './exportar';
 
@@ -24,16 +25,25 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = { title: 'Relatórios — Sobrou' };
 
+type Aba = 'geral' | 'ganhos' | 'custos' | 'mais';
+const ABAS: Array<{ chave: Aba; rotulo: string }> = [
+  { chave: 'geral', rotulo: 'Visão geral' },
+  { chave: 'ganhos', rotulo: 'Ganhos' },
+  { chave: 'custos', rotulo: 'Custos' },
+  { chave: 'mais', rotulo: 'Mais' },
+];
+
 export default async function RelatoriosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string; aba?: string }>;
 }) {
   const sp = await searchParams;
   const ctx = await carregarContexto();
 
   const chave = (sp.periodo ?? 'mes') as ChavePeriodo;
   const periodo = resolverPeriodoDoUsuario(chave, ctx.timezone, { de: sp.de, ate: sp.ate });
+  const aba: Aba = ABAS.some((a) => a.chave === sp.aba) ? (sp.aba as Aba) : 'geral';
 
   const atual = await carregarPeriodo(periodo.de, periodo.ate);
   const podeComparar = await can('monthly_compare');
@@ -48,14 +58,46 @@ export default async function RelatoriosPage({
   const p = anterior?.totais;
   const semDados = t.turnos === 0 && t.gastoCombustivelReal === 0;
 
+  function hrefAba(a: Aba) {
+    const params = new URLSearchParams();
+    params.set('periodo', chave);
+    if (sp.de) params.set('de', sp.de);
+    if (sp.ate) params.set('ate', sp.ate);
+    params.set('aba', a);
+    return `/app/relatorios?${params.toString()}`;
+  }
+
   return (
     <>
-      <h1 className="mb-1 text-xl font-bold">Relatórios</h1>
+      <div className="mb-1 flex items-center justify-between">
+        <h1 className="text-xl font-bold">Relatórios</h1>
+        <BotaoSino />
+      </div>
       <p className="mb-5 text-sm text-[var(--color-tinta-suave)]">{periodo.rotulo}</p>
 
       <Suspense fallback={null}>
         <FiltrosPeriodo atual={chave} />
       </Suspense>
+
+      <div
+        className="mb-6 grid grid-cols-4 gap-1 rounded-full p-1"
+        style={{ background: 'var(--color-papel-suave)' }}
+      >
+        {ABAS.map((a) => (
+          <a
+            key={a.chave}
+            href={hrefAba(a.chave)}
+            className="rounded-full py-2 text-center text-xs font-medium sm:text-sm"
+            style={
+              a.chave === aba
+                ? { background: 'var(--color-marca)', color: '#fff' }
+                : { color: 'var(--color-tinta-suave)' }
+            }
+          >
+            {a.rotulo}
+          </a>
+        ))}
+      </div>
 
       {semDados ? (
         <div
@@ -73,155 +115,183 @@ export default async function RelatoriosPage({
         </div>
       ) : (
         <>
-          <section className="mb-6 grid grid-cols-2 gap-3">
-            <Cartao
-              titulo="Faturamento"
-              valor={formatMoney(t.faturamento)}
-              comparacao={cmp(t.faturamento, p?.faturamento)}
-            />
-            <Cartao
-              titulo="Sobrou"
-              valor={formatMoney(t.disponivel)}
-              comparacao={cmp(t.disponivel, p?.disponivel)}
-              destaque
-            />
-            <Cartao titulo="KM rodados" valor={formatKm(t.km)} comparacao={cmp(t.km, p?.km)} />
-            <Cartao
-              titulo="Horas"
-              valor={formatHoras(t.horas)}
-              comparacao={cmp(t.horas, p?.horas)}
-            />
-          </section>
+          {aba === 'geral' && (
+            <>
+              <section className="mb-6 grid grid-cols-2 gap-3">
+                <Cartao
+                  titulo="Faturamento"
+                  valor={formatMoney(t.faturamento)}
+                  comparacao={cmp(t.faturamento, p?.faturamento)}
+                />
+                <Cartao
+                  titulo="Sobrou"
+                  valor={formatMoney(t.disponivel)}
+                  comparacao={cmp(t.disponivel, p?.disponivel)}
+                  destaque
+                />
+                <Cartao titulo="KM rodados" valor={formatKm(t.km)} comparacao={cmp(t.km, p?.km)} />
+                <Cartao
+                  titulo="Horas"
+                  valor={formatHoras(t.horas)}
+                  comparacao={cmp(t.horas, p?.horas)}
+                />
+              </section>
 
-          <section className="mb-6">
-            <h2 className="mb-3 font-semibold">Seu desempenho</h2>
-            <div className="grid grid-cols-3 gap-2">
-              <CartaoNumero
-                rotulo="R$/hora"
-                valor={formatRate(t.faturamentoPorHora, 'h')}
-                comparacao={cmp(t.faturamentoPorHora ?? 0, p?.faturamentoPorHora ?? undefined)}
-              />
-              <CartaoNumero
-                rotulo="R$/km"
-                valor={formatRate(t.faturamentoPorKm, 'km')}
-                comparacao={cmp(t.faturamentoPorKm ?? 0, p?.faturamentoPorKm ?? undefined)}
-              />
-              <CartaoNumero
-                rotulo="Margem"
-                valor={
-                  t.faturamento > 0
-                    ? formatPercent((t.resultadoOperacional / t.faturamento) * 100, 0)
-                    : '—'
-                }
-                comparacao={
-                  t.faturamento > 0 && p && p.faturamento > 0
-                    ? cmp(
-                        (t.resultadoOperacional / t.faturamento) * 100,
-                        (p.resultadoOperacional / p.faturamento) * 100,
-                      )
-                    : null
-                }
-              />
-            </div>
-          </section>
-
-          <section className="mb-6">
-            <h2 className="mb-3 font-semibold">Números do período</h2>
-            <div className="grid grid-cols-2 gap-2">
-              <CartaoNumero rotulo="Dias trabalhados" valor={String(t.diasTrabalhados)} />
-              <CartaoNumero rotulo="Turnos" valor={String(t.turnos)} />
-              {t.qtdCorridas !== null && (
-                <CartaoNumero rotulo="Corridas" valor={String(t.qtdCorridas)} />
+              {atual.serie.length > 1 && (
+                <section className="mb-6">
+                  <h2 className="mb-3 font-semibold">Evolução no período</h2>
+                  <GraficoEvolucao pontos={atual.serie} />
+                </section>
               )}
-              <CartaoNumero rotulo="Litros abastecidos" valor={formatLitros(t.litrosAbastecidos)} />
-              <CartaoNumero rotulo="Gasto com combustível" valor={formatMoney(t.gastoCombustivelReal)} />
-              <CartaoNumero rotulo="Preço médio do litro" valor={formatRate(t.precoMedioLitro, 'L')} />
-              <CartaoNumero rotulo="Consumo médio" valor={formatConsumo(t.consumoMedio)} />
-              <CartaoNumero
-                rotulo="Faturamento por km"
-                valor={formatRate(t.faturamentoPorKm, 'km')}
-                comparacao={cmp(t.faturamentoPorKm ?? 0, p?.faturamentoPorKm ?? undefined)}
-              />
-              <CartaoNumero
-                rotulo="Faturamento por hora"
-                valor={formatRate(t.faturamentoPorHora, 'h')}
-                comparacao={cmp(t.faturamentoPorHora ?? 0, p?.faturamentoPorHora ?? undefined)}
-              />
-              <CartaoNumero
-                rotulo="Custo combustível por km"
-                valor={formatRate(t.custoCombustivelPorKm, 'km')}
-              />
-              <CartaoNumero rotulo="Outras despesas" valor={formatMoney(t.outrasDespesas)} />
-              {t.outrasReceitas > 0 && (
-                <CartaoNumero rotulo="Receitas fora de turno" valor={formatMoney(t.outrasReceitas)} />
+
+              <section className="mb-6">
+                <h2 className="mb-3 font-semibold">Seu desempenho</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <CartaoNumero
+                    rotulo="por hora"
+                    valor={formatRate(t.faturamentoPorHora, 'h')}
+                    comparacao={cmp(t.faturamentoPorHora ?? 0, p?.faturamentoPorHora ?? undefined)}
+                  />
+                  <CartaoNumero
+                    rotulo="por km"
+                    valor={formatRate(t.faturamentoPorKm, 'km')}
+                    comparacao={cmp(t.faturamentoPorKm ?? 0, p?.faturamentoPorKm ?? undefined)}
+                  />
+                  <CartaoNumero rotulo="km rodados" valor={formatKm(t.km, 0)} />
+                  <CartaoNumero rotulo="consumo médio" valor={formatConsumo(t.consumoMedio)} />
+                </div>
+              </section>
+
+              {podeComparar && p && (
+                <section
+                  className="mb-6 rounded-[var(--radius-cartao)] p-4"
+                  style={{ background: 'var(--color-papel-suave)' }}
+                >
+                  <h2 className="mb-1 font-semibold">Comparado com {periodo.anterior.rotulo}</h2>
+                  <p className="text-sm text-[var(--color-tinta-suave)]">
+                    Faturamento {formatMoney(p.faturamento)} → {formatMoney(t.faturamento)} (
+                    {formatVariacao(compararIndicador(t.faturamento, p.faturamento).variacao)}).
+                    Disponível {formatMoney(p.disponivel)} → {formatMoney(t.disponivel)} (
+                    {formatVariacao(compararIndicador(t.disponivel, p.disponivel).variacao)}).
+                  </p>
+                </section>
               )}
-              <CartaoNumero rotulo="Resultado operacional" valor={formatMoney(t.resultadoOperacional)} />
-              <CartaoNumero rotulo="Reservado para o carro" valor={formatMoney(t.reservaVeiculo)} />
-              <CartaoNumero rotulo="Reservado para emergência" valor={formatMoney(t.reservaEmergencia)} />
-              <CartaoNumero rotulo="Manutenção realizada" valor={formatMoney(t.manutencaoRealizada)} />
-            </div>
-            <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
-              Reservado é o que foi separado no período; manutenção realizada é o que saiu de fato.
-              Os dois não se anulam.
-            </p>
-          </section>
-
-          {atual.serie.length > 1 && (
-            <section className="mb-6">
-              <h2 className="mb-3 font-semibold">Evolução no período</h2>
-              <GraficoEvolucao pontos={atual.serie} />
-            </section>
+            </>
           )}
 
-          {atual.porPlataforma.length > 0 && (
-            <section className="mb-6">
-              <h2 className="mb-3 font-semibold">Por plataforma</h2>
-              <div
-                className="rounded-[var(--radius-cartao)] p-4"
-                style={{ background: 'var(--color-papel-suave)' }}
-              >
-                <DonutPlataformas itens={atual.porPlataforma} />
-              </div>
-            </section>
+          {aba === 'ganhos' && (
+            <>
+              {atual.porPlataforma.length > 0 ? (
+                <section className="mb-6">
+                  <h2 className="mb-3 font-semibold">Faturamento por aplicativo</h2>
+                  <div
+                    className="rounded-[var(--radius-cartao)] p-4"
+                    style={{ background: 'var(--color-papel-suave)' }}
+                  >
+                    <Donut itens={atual.porPlataforma} rotuloCentro="faturamento" />
+                  </div>
+                </section>
+              ) : (
+                <p className="text-sm text-[var(--color-tinta-suave)]">
+                  Nenhum ganho por plataforma registrado neste período.
+                </p>
+              )}
+
+              {atual.porPlataformaDetalhado.length > 0 && (
+                <section className="mb-6">
+                  <h2 className="mb-1 font-semibold">Onde seu trabalho rendeu mais</h2>
+                  <p className="mb-3 text-xs text-[var(--color-tinta-suave)]">
+                    O custo de cada turno é rateado entre as plataformas na proporção da receita que
+                    cada uma trouxe naquele turno — é uma estimativa, não uma medição exata.
+                  </p>
+                  <TabelaRentabilidade itens={atual.porPlataformaDetalhado} />
+                </section>
+              )}
+            </>
           )}
 
-          {atual.porPlataformaDetalhado.length > 0 && (
-            <section className="mb-6">
-              <h2 className="mb-1 font-semibold">Onde seu trabalho rendeu mais</h2>
-              <p className="mb-3 text-xs text-[var(--color-tinta-suave)]">
-                O custo de cada turno é rateado entre as plataformas na proporção da receita que
-                cada uma trouxe naquele turno — é uma estimativa, não uma medição exata.
-              </p>
-              <TabelaRentabilidade itens={atual.porPlataformaDetalhado} />
-            </section>
+          {aba === 'custos' && (
+            <>
+              {atual.porCategoria.length > 0 ? (
+                <section className="mb-6">
+                  <div className="mb-3 flex items-baseline justify-between">
+                    <h2 className="font-semibold">Custos do período</h2>
+                  </div>
+                  <div
+                    className="rounded-[var(--radius-cartao)] p-4"
+                    style={{ background: 'var(--color-papel-suave)' }}
+                  >
+                    <Donut itens={atual.porCategoria} rotuloCentro="total de custos" mostrarValor />
+                  </div>
+                </section>
+              ) : (
+                <p className="text-sm text-[var(--color-tinta-suave)]">
+                  Nenhum custo registrado neste período.
+                </p>
+              )}
+
+              <section className="mb-6">
+                <h2 className="mb-3 font-semibold">Combustível</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <CartaoNumero rotulo="Litros abastecidos" valor={formatLitros(t.litrosAbastecidos)} />
+                  <CartaoNumero
+                    rotulo="Gasto com combustível"
+                    valor={formatMoney(t.gastoCombustivelReal)}
+                  />
+                  <CartaoNumero rotulo="Preço médio do litro" valor={formatRate(t.precoMedioLitro, 'L')} />
+                  <CartaoNumero
+                    rotulo="Custo por km"
+                    valor={formatRate(t.custoCombustivelPorKm, 'km')}
+                  />
+                </div>
+              </section>
+            </>
           )}
 
-          {atual.porCategoria.length > 0 && (
-            <section className="mb-6">
-              <h2 className="mb-3 font-semibold">Para onde foi o dinheiro</h2>
-              <Barras
-                itens={atual.porCategoria.map((x) => ({ nome: x.nome, valor: x.valor }))}
-                cor="var(--color-alerta)"
-              />
-            </section>
-          )}
+          {aba === 'mais' && (
+            <>
+              <section className="mb-6">
+                <h2 className="mb-3 font-semibold">Números do período</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <CartaoNumero rotulo="Dias trabalhados" valor={String(t.diasTrabalhados)} />
+                  <CartaoNumero rotulo="Turnos" valor={String(t.turnos)} />
+                  {t.qtdCorridas !== null && (
+                    <CartaoNumero rotulo="Corridas" valor={String(t.qtdCorridas)} />
+                  )}
+                  <CartaoNumero
+                    rotulo="Margem"
+                    valor={
+                      t.faturamento > 0
+                        ? formatPercent((t.resultadoOperacional / t.faturamento) * 100, 0)
+                        : '—'
+                    }
+                    comparacao={
+                      t.faturamento > 0 && p && p.faturamento > 0
+                        ? cmp(
+                            (t.resultadoOperacional / t.faturamento) * 100,
+                            (p.resultadoOperacional / p.faturamento) * 100,
+                          )
+                        : null
+                    }
+                  />
+                  <CartaoNumero rotulo="Outras despesas" valor={formatMoney(t.outrasDespesas)} />
+                  {t.outrasReceitas > 0 && (
+                    <CartaoNumero rotulo="Receitas fora de turno" valor={formatMoney(t.outrasReceitas)} />
+                  )}
+                  <CartaoNumero rotulo="Resultado operacional" valor={formatMoney(t.resultadoOperacional)} />
+                  <CartaoNumero rotulo="Reservado para o carro" valor={formatMoney(t.reservaVeiculo)} />
+                  <CartaoNumero rotulo="Reservado para emergência" valor={formatMoney(t.reservaEmergencia)} />
+                  <CartaoNumero rotulo="Manutenção realizada" valor={formatMoney(t.manutencaoRealizada)} />
+                </div>
+                <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
+                  Reservado é o que foi separado no período; manutenção realizada é o que saiu de fato.
+                  Os dois não se anulam.
+                </p>
+              </section>
 
-          {podeComparar && p && (
-            <section
-              className="mb-6 rounded-[var(--radius-cartao)] p-4"
-              style={{ background: 'var(--color-papel-suave)' }}
-            >
-              <h2 className="mb-1 font-semibold">Comparado com {periodo.anterior.rotulo}</h2>
-              <p className="text-sm text-[var(--color-tinta-suave)]">
-                Faturamento {formatMoney(p.faturamento)} → {formatMoney(t.faturamento)} (
-                {formatVariacao(compararIndicador(t.faturamento, p.faturamento).variacao)}).
-                Disponível {formatMoney(p.disponivel)} → {formatMoney(t.disponivel)} (
-                {formatVariacao(compararIndicador(t.disponivel, p.disponivel).variacao)}).
-              </p>
-            </section>
+              <BotoesExportar de={periodo.de} ate={periodo.ate} rotulo={periodo.rotulo} />
+            </>
           )}
-
-          <BotoesExportar de={periodo.de} ate={periodo.ate} rotulo={periodo.rotulo} />
         </>
       )}
 
@@ -317,16 +387,22 @@ function CartaoNumero({
 }
 
 /**
- * Rosca de composição: qual fração do faturamento veio de cada plataforma.
+ * Rosca de composição: qual fração do total veio de cada plataforma/categoria.
  * Cada fatia usa a mesma cor da categoria em todo o app (Painel, Transações),
  * então a identidade nunca muda de tela pra tela — e a legenda ao lado nomeia
  * cada cor, pra não depender só da cor pra diferenciar (seção 6 do guia de
- * gráficos).
+ * gráficos). Usada tanto para "Faturamento por aplicativo" (Ganhos) quanto
+ * para "Custos do período" (Custos) — só muda o rótulo do centro e se a
+ * legenda mostra o valor em reais além do percentual.
  */
-function DonutPlataformas({
+function Donut({
   itens,
+  rotuloCentro,
+  mostrarValor,
 }: {
-  itens: Array<{ nome: string; valor: number; cor: string | null; corridas: number }>;
+  itens: Array<{ nome: string; valor: number; cor: string | null }>;
+  rotuloCentro: string;
+  mostrarValor?: boolean;
 }) {
   const total = itens.reduce((a, i) => a + i.valor, 0);
   if (total <= 0) return null;
@@ -370,7 +446,7 @@ function DonutPlataformas({
           {formatMoney(total)}
         </text>
         <text x="70" y="82" textAnchor="middle" fontSize="9" fill="var(--color-tinta-suave)">
-          faturamento
+          {rotuloCentro}
         </text>
       </svg>
       <ul className="min-w-0 flex-1 space-y-2 text-sm">
@@ -384,55 +460,12 @@ function DonutPlataformas({
             <span className="min-w-0 flex-1 truncate">{f.nome}</span>
             <span className="tabular shrink-0 font-medium text-[var(--color-tinta-suave)]">
               {formatPercent(f.fracao * 100, 0)}
+              {mostrarValor && <> · {formatMoney(f.valor)}</>}
             </span>
           </li>
         ))}
       </ul>
     </div>
-  );
-}
-
-/**
- * Barras proporcionais. Um gráfico só entra quando ajuda a interpretar
- * (seção 19) — aqui, para enxergar de relance qual plataforma ou categoria
- * domina, o que uma lista de números não entrega.
- */
-function Barras({
-  itens,
-  cor = 'var(--color-marca)',
-}: {
-  itens: Array<{ nome: string; valor: number; detalhe?: string }>;
-  cor?: string;
-}) {
-  const maior = Math.max(...itens.map((i) => i.valor), 1);
-
-  return (
-    <ul className="space-y-2.5">
-      {itens.map((item) => (
-        <li key={item.nome}>
-          <div className="mb-1 flex items-baseline justify-between gap-3 text-sm">
-            <span className="min-w-0 truncate">
-              {item.nome}
-              {item.detalhe && (
-                <span className="ml-2 text-xs text-[var(--color-tinta-suave)]">
-                  {item.detalhe}
-                </span>
-              )}
-            </span>
-            <span className="tabular shrink-0 font-medium">{formatMoney(item.valor)}</span>
-          </div>
-          <div
-            className="h-2 overflow-hidden rounded-full"
-            style={{ background: 'var(--color-papel-suave)' }}
-          >
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${(item.valor / maior) * 100}%`, background: cor }}
-            />
-          </div>
-        </li>
-      ))}
-    </ul>
   );
 }
 
