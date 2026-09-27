@@ -98,21 +98,37 @@ export default async function ConsultorPage() {
         <>
           {dados && dados.saudeFinanceira !== null && (
             <section className="cartao mb-5 p-5">
-              <div className="mb-3 flex items-baseline justify-between">
-                <span className="text-[11px] font-semibold tracking-wide text-[var(--color-tinta-suave)] uppercase">
-                  Saúde financeira · últimos 30 dias
-                </span>
-                <span className="tabular text-xl font-extrabold" style={{ color: 'var(--color-marca)' }}>
-                  {dados.saudeFinanceira}
-                  <span className="text-sm font-medium text-[var(--color-tinta-suave)]">/100</span>
-                </span>
-              </div>
-              <div className="h-2.5 overflow-hidden rounded-full" style={{ background: 'var(--color-papel-suave)' }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${dados.saudeFinanceira}%`, background: 'var(--color-marca)' }}
-                />
-              </div>
+              {(() => {
+                const nota = dados.saudeFinanceira;
+                const cor =
+                  nota >= 70
+                    ? 'var(--color-positivo)'
+                    : nota >= 40
+                      ? 'var(--color-aviso)'
+                      : 'var(--color-alerta)';
+                return (
+                  <>
+                    <div className="mb-3 flex items-baseline justify-between">
+                      <span className="text-[11px] font-semibold tracking-wide text-[var(--color-tinta-suave)] uppercase">
+                        Saúde financeira · últimos 30 dias
+                      </span>
+                      <span className="tabular text-xl font-extrabold" style={{ color: cor }}>
+                        {nota}
+                        <span className="text-sm font-medium text-[var(--color-tinta-suave)]">/100</span>
+                      </span>
+                    </div>
+                    <div
+                      className="h-2.5 overflow-hidden rounded-full"
+                      style={{ background: 'var(--color-papel-suave)' }}
+                    >
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${nota}%`, background: cor }}
+                      />
+                    </div>
+                  </>
+                );
+              })()}
               <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
                 Baseada na sua margem operacional — o que sobra depois de combustível, manutenção e
                 despesas, em relação ao faturamento.
@@ -127,11 +143,14 @@ export default async function ConsultorPage() {
               ))}
             </section>
           ) : (
-            <div className="cartao border-dashed p-6 text-center">
-              <p className="font-medium">Ainda não dá pra dizer nada com segurança.</p>
+            <div
+              className="rounded-[var(--radius-cartao)] p-6 text-center"
+              style={{ background: 'var(--color-papel-suave)' }}
+            >
+              <p className="font-medium">Continue registrando seus turnos para desbloquear insights.</p>
               <p className="mt-1 text-sm text-[var(--color-tinta-suave)]">
-                Feche mais alguns turnos — o consultor precisa de um pouco de histórico pra comparar
-                semanas e apontar padrões de verdade, em vez de chutar.
+                O consultor precisa de um pouco de histórico pra comparar semanas e apontar padrões
+                de verdade, em vez de chutar.
               </p>
             </div>
           )}
