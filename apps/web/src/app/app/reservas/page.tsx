@@ -98,12 +98,14 @@ export default async function ReservasPage() {
       <section className="mb-6 grid gap-3">
         <Saldo
           titulo="Reserva do carro"
+          proposito="Manutenção, revisão e depreciação — o desgaste que rodar gera."
           saldo={Number(veiculo?.saldo ?? 0)}
           reservado={Number(veiculo?.total_creditado ?? 0)}
           gasto={Number(veiculo?.total_gasto ?? 0)}
         />
         <Saldo
           titulo="Reserva de emergência"
+          proposito="Fora do carro: um imprevisto, um mês fraco, um susto qualquer."
           saldo={Number(emergencia?.saldo ?? 0)}
           reservado={Number(emergencia?.total_creditado ?? 0)}
           gasto={Number(emergencia?.total_gasto ?? 0)}
@@ -112,12 +114,12 @@ export default async function ReservasPage() {
 
       {cobertura.status !== 'sem_dados' && (
         <section
-          className="mb-8 rounded-[var(--radius-cartao)] border p-4"
+          className="mb-8 rounded-[var(--radius-cartao)] p-4"
           style={{
-            borderColor:
+            background:
               cobertura.status === 'insuficiente'
-                ? 'var(--color-alerta)'
-                : 'var(--color-borda)',
+                ? 'var(--color-alerta-suave)'
+                : 'var(--color-papel-suave)',
           }}
         >
           <h2 className="mb-1 font-semibold">A reserva do carro está no tamanho certo?</h2>
@@ -139,18 +141,25 @@ export default async function ReservasPage() {
 
       <h2 className="mb-3 font-semibold">Extrato</h2>
       {(movimentos ?? []).length === 0 ? (
-        <div className="rounded-[var(--radius-cartao)] border border-dashed border-[var(--color-borda)] p-6 text-center">
+        <div
+          className="rounded-[var(--radius-cartao)] p-6 text-center"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
           <p className="font-medium">Nenhum movimento ainda.</p>
           <p className="mt-1 text-sm text-[var(--color-tinta-suave)]">
             Cada turno fechado credita a sua fatia aqui automaticamente.
           </p>
         </div>
       ) : (
-        <ul className="divide-y divide-[var(--color-borda)] rounded-[var(--radius-cartao)] border border-[var(--color-borda)]">
+        <ul className="space-y-2">
           {(movimentos ?? []).map((m) => {
             const credito = m.direction === 'credito';
             return (
-              <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <li
+                key={m.id}
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-cartao)] px-4 py-3"
+                style={{ background: 'var(--color-papel-elevado)' }}
+              >
                 <span className="min-w-0">
                   <span className="block truncate font-medium">
                     {m.description || ORIGEM[m.source] || 'Movimento'}
@@ -182,21 +191,29 @@ export default async function ReservasPage() {
 
 function Saldo({
   titulo,
+  proposito,
   saldo,
   reservado,
   gasto,
 }: {
   titulo: string;
+  proposito: string;
   saldo: number;
   reservado: number;
   gasto: number;
 }) {
   return (
-    <div className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] bg-[var(--color-papel-suave)] p-4">
+    <div
+      className="rounded-[var(--radius-cartao)] p-4"
+      style={{ background: 'var(--color-papel-suave)' }}
+    >
       <p className="text-sm text-[var(--color-tinta-suave)]">{titulo}</p>
       <p className="tabular mt-1 text-2xl font-bold">{formatMoney(saldo)}</p>
       <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">
         {formatMoney(reservado)} guardados · {formatMoney(gasto)} já gastos
+      </p>
+      <p className="mt-2 border-t border-[var(--color-borda)] pt-2 text-xs text-[var(--color-tinta-suave)]">
+        {proposito}
       </p>
     </div>
   );
