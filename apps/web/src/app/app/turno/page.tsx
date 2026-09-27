@@ -40,7 +40,10 @@ export default async function TurnoPage() {
           }
         />
 
-        <section className="mt-8 rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-4">
+        <section
+          className="mt-8 rounded-[var(--radius-cartao)] p-4"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
           <h2 className="mb-2 font-semibold">O que o cálculo vai usar</h2>
           <dl className="space-y-1 text-sm">
             <div className="flex justify-between gap-3">
@@ -110,13 +113,15 @@ export default async function TurnoPage() {
       <div className="mt-6 grid grid-cols-2 gap-3">
         <Link
           href="/app/abastecimentos/novo"
-          className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] bg-[var(--color-papel-suave)] p-4 text-center font-medium"
+          className="rounded-[var(--radius-cartao)] p-4 text-center font-medium"
+          style={{ background: 'var(--color-info-suave)', color: 'var(--color-info)' }}
         >
           + Abastecimento
         </Link>
         <Link
           href="/app/lancamentos/novo"
-          className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] bg-[var(--color-papel-suave)] p-4 text-center font-medium"
+          className="rounded-[var(--radius-cartao)] p-4 text-center font-medium"
+          style={{ background: 'var(--color-alerta-suave)', color: 'var(--color-alerta)' }}
         >
           + Despesa
         </Link>
@@ -130,9 +135,13 @@ export default async function TurnoPage() {
               {formatMoney(totalDespesas)}
             </span>
           </h2>
-          <ul className="divide-y divide-[var(--color-borda)] rounded-[var(--radius-cartao)] border border-[var(--color-borda)]">
+          <ul className="space-y-2">
             {(despesas ?? []).map((d) => (
-              <li key={d.id} className="flex items-center justify-between gap-3 px-4 py-3">
+              <li
+                key={d.id}
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-cartao)] p-3"
+                style={{ background: 'var(--color-papel-elevado)' }}
+              >
                 <span className="min-w-0">
                   <span className="block truncate font-medium">
                     {nomeCategoria.get(d.category_id) ?? 'Despesa'}
@@ -144,7 +153,9 @@ export default async function TurnoPage() {
                   )}
                 </span>
                 <span className="flex shrink-0 items-center gap-3">
-                  <span className="tabular font-semibold">{formatMoney(Number(d.valor))}</span>
+                  <span className="tabular font-semibold" style={{ color: 'var(--color-alerta)' }}>
+                    − {formatMoney(Number(d.valor))}
+                  </span>
                   <form action={excluirTransacao}>
                     <input type="hidden" name="id" value={d.id} />
                     <button
