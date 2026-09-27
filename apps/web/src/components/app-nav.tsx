@@ -143,3 +143,47 @@ export function AppNav({ admin }: { admin: boolean }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setAberto(false)}
+                  className={classeItem(item.href)}
+                >
+                  <Icone id={item.icone} />
+                  {item.rotulo}
+                </Link>
+              ))}
+
+              <div className="my-2 border-t border-[var(--color-borda)]" />
+
+              {admin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setAberto(false)}
+                  className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium text-[var(--color-marca)]"
+                >
+                  Admin
+                </Link>
+              )}
+              <Link
+                href="/app/ajustes"
+                onClick={() => setAberto(false)}
+                className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium text-[var(--color-tinta-suave)]"
+              >
+                Ajustes
+              </Link>
+              <Link
+                href="/app/conta"
+                onClick={() => setAberto(false)}
+                className="block rounded-[0.65rem] px-3 py-2.5 text-sm font-medium text-[var(--color-tinta-suave)]"
+              >
+                Conta
+              </Link>
+            </nav>
+
+            <div className="border-t border-[var(--color-borda)] p-3">
+              <BotaoSair className="text-sm text-[var(--color-tinta-suave)]" />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
