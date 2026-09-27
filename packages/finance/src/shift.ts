@@ -136,6 +136,25 @@ export function calcularTurno(input: ShiftInput): ShiftResult {
   };
 }
 
+/**
+ * Segundos de turno já trabalhados, descontando o tempo em pausa — completo
+ * (`pausedSeconds`, já somado de pausas anteriores) e, se houver, a pausa
+ * em andamento agora (`pausedAt`). Usado tanto para o cronômetro ao vivo
+ * quanto para excluir o tempo pausado das horas trabalhadas no fechamento.
+ */
+export function segundosTrabalhados(
+  startedAt: Date | string,
+  agora: Date | string,
+  pausedSeconds: number,
+  pausedAt: Date | string | null,
+): number {
+  const inicio = new Date(startedAt).getTime();
+  const fim = new Date(agora).getTime();
+  const bruto = Math.max(0, (fim - inicio) / 1000);
+  const pausaEmAndamento = pausedAt ? Math.max(0, (fim - new Date(pausedAt).getTime()) / 1000) : 0;
+  return Math.max(0, bruto - Math.max(0, pausedSeconds) - pausaEmAndamento);
+}
+
 /** Consumo médio aferido no turno, quando há abastecimento real medido. */
 export function consumoAferidoNoTurno(km: number, litrosAbastecidos: number): number | null {
   return safeDiv(km, litrosAbastecidos, 2);
