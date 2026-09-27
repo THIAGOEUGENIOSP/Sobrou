@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { registrarConsentimentosPendentes } from '@/lib/auth/actions';
 import { ehAdmin } from '@/lib/admin/guarda';
 import { BotaoSair } from '@/components/botao-sair';
+import { AppNav } from '@/components/app-nav';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           Sobrou
         </Link>
         <nav className="flex items-center gap-4 text-sm">
-          {await ehAdmin() && (
+          {(await ehAdmin()) && (
             <Link href="/admin" className="text-[var(--color-marca)]">
               Admin
             </Link>
@@ -55,29 +56,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       <main className="flex-1 pb-20">{children}</main>
 
-      {/* Navegação fixa no rodapé: alvo grande e ao alcance do polegar. */}
-      <nav className="fixed inset-x-0 bottom-0 border-t border-[var(--color-borda)] bg-[var(--color-papel)]">
-        <div className="mx-auto flex max-w-lg">
-          {(
-            [
-              ['/app', 'Meu dia'],
-              ['/app/consultor', 'Consultor'],
-              ['/app/turno', 'Turno'],
-              ['/app/abastecimentos', 'Posto'],
-              ['/app/reservas', 'Reservas'],
-              ['/app/relatorios', 'Relatórios'],
-            ] as const
-          ).map(([href, rotulo]) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex-1 py-3 text-center text-xs font-medium text-[var(--color-tinta-suave)]"
-            >
-              {rotulo}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <AppNav />
     </div>
   );
 }
