@@ -79,18 +79,24 @@ export default async function DashboardPage({
       porViagem: qtd ? divisao(t.faturamento, qtd) : null,
       porHora: t.faturamentoPorHora,
       porKm: t.faturamentoPorKm,
+      cor: 'var(--color-positivo)',
+      corSuave: 'var(--color-positivo-suave)',
     },
     {
       titulo: 'Despesas',
       porViagem: qtd ? divisao(despesas, qtd) : null,
       porHora: divisao(despesas, t.horas),
       porKm: divisao(despesas, t.km),
+      cor: 'var(--color-alerta)',
+      corSuave: 'var(--color-alerta-suave)',
     },
     {
       titulo: 'Lucro',
       porViagem: qtd ? divisao(t.resultadoOperacional, qtd) : null,
       porHora: t.resultadoPorHora,
       porKm: t.resultadoPorKm,
+      cor: 'var(--color-margem)',
+      corSuave: 'var(--color-margem-suave)',
     },
   ];
 
@@ -206,29 +212,19 @@ export default async function DashboardPage({
             <CelulaResumo titulo="KM rodados" valor={formatKm(t.km, 0)} />
           </section>
 
-          <section className="mb-8">
-            <div className="overflow-hidden rounded-[var(--radius-cartao)] border border-[var(--color-borda)]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--color-borda)] text-left text-xs text-[var(--color-tinta-suave)]">
-                    <th className="px-3 py-2 font-medium"> </th>
-                    <th className="px-3 py-2 text-right font-medium">Por viagem</th>
-                    <th className="px-3 py-2 text-right font-medium">Por hora</th>
-                    <th className="px-3 py-2 text-right font-medium">Por km</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-borda)]">
-                  {linhas.map((l) => (
-                    <tr key={l.titulo}>
-                      <td className="px-3 py-2 font-medium">{l.titulo}</td>
-                      <td className="tabular px-3 py-2 text-right">{formatMoney(l.porViagem)}</td>
-                      <td className="tabular px-3 py-2 text-right">{formatMoney(l.porHora)}</td>
-                      <td className="tabular px-3 py-2 text-right">{formatMoney(l.porKm)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <section className="mb-8 space-y-4">
+            {linhas.map((l) => (
+              <div key={l.titulo}>
+                <p className="mb-2 text-sm font-semibold" style={{ color: l.cor }}>
+                  {l.titulo}
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  <CelulaMetrica valor={formatMoney(l.porViagem)} rotulo="Por viagem" cor={l.cor} corSuave={l.corSuave} />
+                  <CelulaMetrica valor={formatMoney(l.porHora)} rotulo="Por hora" cor={l.cor} corSuave={l.corSuave} />
+                  <CelulaMetrica valor={formatMoney(l.porKm)} rotulo="Por km" cor={l.cor} corSuave={l.corSuave} />
+                </div>
+              </div>
+            ))}
           </section>
 
           {atual.porPlataforma.length > 0 && (
@@ -346,6 +342,29 @@ function CelulaResumo({ titulo, valor }: { titulo: string; valor: string }) {
     >
       <p className="text-xs text-[var(--color-tinta-suave)]">{titulo}</p>
       <p className="tabular mt-0.5 font-bold">{valor}</p>
+    </div>
+  );
+}
+
+/** Célula quadrada colorida por identidade da métrica (verde/vermelho/roxo) — usada no
+ * bloco Faturamento/Despesas/Lucro × viagem/hora/km, no lugar de uma tabela em lista. */
+function CelulaMetrica({
+  valor,
+  rotulo,
+  cor,
+  corSuave,
+}: {
+  valor: string;
+  rotulo: string;
+  cor: string;
+  corSuave: string;
+}) {
+  return (
+    <div className="rounded-[var(--radius-cartao)] p-3 text-center" style={{ background: corSuave }}>
+      <p className="tabular font-bold" style={{ color: cor }}>
+        {valor}
+      </p>
+      <p className="mt-0.5 text-xs text-[var(--color-tinta-suave)]">{rotulo}</p>
     </div>
   );
 }
