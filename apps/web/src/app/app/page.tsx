@@ -1,16 +1,21 @@
 import Link from 'next/link';
 import {
   ALLOCATION_PADRAO,
+  compararIndicador,
   formatConsumo,
   formatHoras,
   formatKm,
   formatMoney,
   formatPercent,
+  formatRate,
+  formatVariacao,
   type ChavePeriodo,
 } from '@sobrou/finance';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { carregarPeriodo } from '@/lib/relatorios/dados';
 import { resolverPeriodoDoUsuario } from '@/lib/relatorios/periodo';
+import { carregarMetas } from '@/lib/metas/dados';
+import { can } from '@/lib/entitlements';
 import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -29,6 +34,24 @@ function divisao(a: number, b: number): number | null {
   return b > 0 ? a / b : null;
 }
 
+function saudacaoPorHora(hora: number): string {
+  if (hora < 12) return 'Bom dia';
+  if (hora < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+const TITULO_SOBROU: Record<ChavePeriodo, string> = {
+  hoje: 'Sobrou hoje',
+  ontem: 'Sobrou ontem',
+  sete_dias: 'Sobrou nos últimos 7 dias',
+  trinta_dias: 'Sobrou nos últimos 30 dias',
+  semana: 'Sobrou na semana',
+  mes: 'Sobrou no mês',
+  mes_anterior: 'Sobrou no mês passado',
+  ano: 'Sobrou no ano',
+  personalizado: 'Sobrou no período',
+};
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -44,11 +67,40 @@ export default async function DashboardPage({
   const t = atual.totais;
   const semDados = t.turnos === 0 && t.gastoCombustivelReal === 0;
 
+  const podeComparar = await can('monthly_compare');
+  const anterior = podeComparar
+    ? (await carregarPeriodo(periodo.anterior.de, periodo.anterior.ate)).totais
+    : null;
+  const comparacaoDisponivel = anterior ? compararIndicador(t.disponivel, anterior.disponivel) : null;
+
+  const horaLocal = Number(
+    new Intl.DateTimeFormat('pt-BR', { timeZone: ctx.timezone, hour: 'numeric', hour12: false }).format(
+      new Date(),
+    ),
+  );
+
   const { data: turnoAberto } = await supabase
     .from('shifts')
     .select('id, started_at')
     .eq('status', 'aberto')
     .maybeSingle();
+
+  const { data: perfil } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('user_id', ctx.userId)
+    .maybeSingle();
+  const primeiroNome = perfil?.display_name?.trim().split(/\s+/)[0] ?? null;
+
+  const podeUsarMetas = await can('goals');
+  const metaDiaria =
+    chave === 'hoje' && podeUsarMetas
+      ? (await carregarMetas(ctx.timezone)).find((m) => m.meta.kind === 'fat_diaria')
+      : undefined;
+  const horasParaBaterMeta =
+    metaDiaria && !metaDiaria.progresso.atingida && t.faturamentoPorHora && t.faturamentoPorHora > 0
+      ? metaDiaria.progresso.restante / t.faturamentoPorHora
+      : null;
 
   const { data: saldos } = await supabase
     .from('v_reserve_balances')
@@ -91,18 +143,23 @@ export default async function DashboardPage({
       corSuave: 'var(--color-alerta-suave)',
     },
     {
+      // Lucro é dinheiro, então usa a mesma cor de "positivo" — verde é
+      // sempre o que sobrou, nunca uma cor à parte (seção 2 do design system).
       titulo: 'Lucro',
       porViagem: qtd ? divisao(t.resultadoOperacional, qtd) : null,
       porHora: t.resultadoPorHora,
       porKm: t.resultadoPorKm,
-      cor: 'var(--color-margem)',
-      corSuave: 'var(--color-margem-suave)',
+      cor: 'var(--color-positivo)',
+      corSuave: 'var(--color-positivo-suave)',
     },
   ];
 
   return (
     <>
-      <h1 className="mb-1 text-xl font-bold">Painel</h1>
+      <p className="text-sm" style={{ color: 'var(--color-tinta-suave)' }}>
+        {primeiroNome ? `${saudacaoPorHora(horaLocal)}, ${primeiroNome}` : saudacaoPorHora(horaLocal)}
+      </p>
+      <h1 className="mb-1 text-2xl font-bold">Vamos pra cima hoje? 🚀</h1>
       <p className="mb-5 text-sm text-[var(--color-tinta-suave)]">{periodo.rotulo}</p>
 
       {turnoAberto ? (
@@ -161,55 +218,110 @@ export default async function DashboardPage({
       </div>
 
       {semDados ? (
-        <div className="mb-8 rounded-[var(--radius-cartao)] border border-dashed border-[var(--color-borda)] p-6 text-center">
+        <div
+          className="mb-8 rounded-[var(--radius-cartao)] p-6 text-center"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
           <p className="font-medium">Nada registrado {periodo.rotulo.toLowerCase()}.</p>
           <p className="mt-1 text-sm text-[var(--color-tinta-suave)]">
-            Assim que você fechar um turno neste período, o faturamento, as despesas e o lucro
-            aparecem aqui.
+            Assim que você fechar um turno neste período, seus resultados aparecem aqui.
           </p>
         </div>
       ) : (
         <>
-          <section className="mb-3">
+          {/* Cartão único "Sobrou": a pergunta que importa primeiro é quanto ficou
+              disponível, não o faturamento bruto — faturamento e custos+reservas
+              entram como subinformação do mesmo cartão (seções 6–7 do script). */}
+          <section className="mb-6">
             <div
-              className="rounded-[var(--radius-cartao)] p-4 text-center"
+              className="rounded-[var(--radius-cartao)] p-5"
               style={{ background: 'var(--color-positivo)' }}
             >
-              <p className="text-sm font-medium text-black/70">Faturamento</p>
-              <p className="tabular mt-1 text-3xl font-extrabold text-black">
-                {formatMoney(t.faturamento)}
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-black/70">{TITULO_SOBROU[chave]}</p>
+                {comparacaoDisponivel?.variacao !== null && comparacaoDisponivel?.variacao !== undefined && (
+                  <span className="tabular rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black/80">
+                    {formatVariacao(comparacaoDisponivel.variacao)} vs. período anterior
+                  </span>
+                )}
+              </div>
+              <p className="tabular mt-1 text-4xl font-extrabold text-black">
+                {formatMoney(t.disponivel)}
               </p>
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-sm text-black/70">
+                <span>
+                  Faturamento <strong className="text-black">{formatMoney(t.faturamento)}</strong>
+                </span>
+                <span>
+                  Custos + reservas{' '}
+                  <strong className="text-black">{formatMoney(t.faturamento - t.disponivel)}</strong>
+                </span>
+              </div>
             </div>
           </section>
 
-          <section className="mb-6 grid grid-cols-2 gap-3">
-            <div
-              className="rounded-[var(--radius-cartao)] p-4 text-center"
-              style={{ background: 'var(--color-alerta)' }}
+          {chave === 'hoje' && metaDiaria && (
+            <section
+              className="mb-6 rounded-[var(--radius-cartao)] p-4"
+              style={{ background: 'var(--color-papel-suave)' }}
             >
-              <p className="text-sm font-medium text-white/85">Despesas</p>
-              <p className="tabular mt-1 text-xl font-bold text-white">{formatMoney(despesas)}</p>
-            </div>
-            <div
-              className="rounded-[var(--radius-cartao)] p-4 text-center"
-              style={{ background: 'var(--color-margem)' }}
-            >
-              <p className="text-sm font-medium text-white/85">Lucro</p>
-              <p className="tabular mt-1 text-xl font-bold text-white">
-                {formatMoney(t.resultadoOperacional)}
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold">Meta do dia</p>
+                <span
+                  className="tabular rounded-full px-2 py-0.5 text-xs font-semibold"
+                  style={
+                    metaDiaria.progresso.atingida
+                      ? { background: 'var(--color-positivo-suave)', color: 'var(--color-positivo)' }
+                      : { background: 'var(--color-marca-suave)', color: 'var(--color-marca-forte)' }
+                  }
+                >
+                  {formatPercent(metaDiaria.progresso.percentual, 0)}
+                </span>
+              </div>
+              <p className="tabular mt-2 text-lg font-bold">
+                {formatMoney(metaDiaria.progresso.realizado)}{' '}
+                <span className="text-sm font-normal text-[var(--color-tinta-suave)]">
+                  de {formatMoney(metaDiaria.progresso.alvo)}
+                </span>
               </p>
-              {margemPct !== null && (
-                <p className="tabular mt-0.5 text-xs text-white/80">
-                  {formatPercent(margemPct, 0)} de margem
+              <div
+                className="mt-2 h-2 overflow-hidden rounded-full"
+                style={{ background: 'var(--color-papel-elevado)' }}
+              >
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min(100, metaDiaria.progresso.percentual ?? 0)}%`,
+                    background: metaDiaria.progresso.atingida
+                      ? 'var(--color-positivo)'
+                      : 'var(--color-marca)',
+                  }}
+                />
+              </div>
+              {!metaDiaria.progresso.atingida && (
+                <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
+                  Faltam {formatMoney(metaDiaria.progresso.restante)}
+                  {horasParaBaterMeta !== null && (
+                    <> — no seu ritmo atual, ~{formatHoras(horasParaBaterMeta)} de trabalho</>
+                  )}
                 </p>
               )}
-            </div>
-          </section>
+            </section>
+          )}
 
           <section className="mb-6 grid grid-cols-3 gap-2">
             <CelulaResumo titulo="Viagens" valor={qtd !== null ? String(qtd) : '—'} />
             <CelulaResumo titulo="Horas" valor={formatHoras(t.horas)} />
             <CelulaResumo titulo="KM rodados" valor={formatKm(t.km, 0)} />
+          </section>
+
+          <section className="mb-6 grid grid-cols-3 gap-2">
+            <CelulaResumo titulo="R$/hora" valor={formatRate(t.faturamentoPorHora, 'h')} />
+            <CelulaResumo titulo="R$/km" valor={formatRate(t.faturamentoPorKm, 'km')} />
+            <CelulaResumo
+              titulo="Margem"
+              valor={margemPct !== null ? formatPercent(margemPct, 0) : '—'}
+            />
           </section>
 
           <section className="mb-8 space-y-4">
