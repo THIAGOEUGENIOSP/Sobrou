@@ -53,14 +53,40 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
         })}
       </p>
 
-      <section className="mb-6 rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-5">
+      {/* Cartão único: o que sobrou primeiro, com faturamento/km/horas como
+          subinformação — mesma linguagem visual do Painel (verde = dinheiro
+          disponível, vermelho = prejuízo; nunca a cor de marca). */}
+      <section className="mb-6">
+        <div
+          className="rounded-[var(--radius-cartao)] p-5"
+          style={{ background: prejuizo ? 'var(--color-alerta)' : 'var(--color-positivo)' }}
+        >
+          <p className="text-sm font-medium text-black/70">
+            {prejuizo ? 'Prejuízo do dia' : 'Sobrou nesse turno'}
+          </p>
+          <p className="tabular mt-1 text-4xl font-extrabold text-black">
+            {formatMoney(disponivel)}
+          </p>
+          <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-sm text-black/70">
+            <span>
+              Faturamento <strong className="text-black">{formatMoney(faturamento)}</strong>
+            </span>
+            <span>
+              Combustível <strong className="text-black">{formatMoney(custoCombustivel)}</strong>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section
+        className="mb-6 rounded-[var(--radius-cartao)] p-5"
+        style={{ background: 'var(--color-papel-suave)' }}
+      >
         <dl className="space-y-1.5 text-sm">
-          <Linha rotulo="Faturamento" valor={formatMoney(faturamento)} />
           <Linha rotulo="Horas trabalhadas" valor={formatHoras(horas)} />
           <Linha rotulo="KM rodados" valor={formatKm(km)} />
           <Linha rotulo="Média" valor={formatConsumo(Number(turno.consumo_usado))} />
           <Linha rotulo="Combustível consumido" valor={formatLitros(Number(turno.snap_litros))} />
-          <Linha rotulo="Custo do combustível" valor={formatMoney(custoCombustivel)} />
           <Linha rotulo="Custo combustível/km" valor={formatRate(safeDiv(custoCombustivel, km), 'km')} />
           <Linha rotulo="Faturamento/km" valor={formatRate(safeDiv(faturamento, km), 'km')} />
           <Linha rotulo="Faturamento/hora" valor={formatRate(safeDiv(faturamento, horas, 2), 'h')} />
@@ -72,26 +98,18 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
             <Linha rotulo="Reserva de emergência" valor={formatMoney(Number(turno.snap_reserva_emerg))} />
           </div>
         </dl>
-
-        <div className="mt-4 border-t border-[var(--color-borda)] pt-4">
-          <p className="text-sm text-[var(--color-tinta-suave)]">
-            {prejuizo ? 'Prejuízo do dia' : 'Valor disponível'}
-          </p>
-          <p
-            className="tabular text-3xl font-bold"
-            style={{ color: prejuizo ? 'var(--color-alerta)' : 'var(--color-marca)' }}
-          >
-            {formatMoney(disponivel)}
-          </p>
-        </div>
       </section>
 
       {(receitas ?? []).length > 1 && (
         <section className="mb-6">
           <h2 className="mb-3 font-semibold">Por plataforma</h2>
-          <ul className="divide-y divide-[var(--color-borda)] rounded-[var(--radius-cartao)] border border-[var(--color-borda)]">
+          <ul className="space-y-2">
             {(receitas ?? []).map((r) => (
-              <li key={r.category_id} className="flex justify-between gap-3 px-4 py-3">
+              <li
+                key={r.category_id}
+                className="flex justify-between gap-3 rounded-[var(--radius-cartao)] px-4 py-3"
+                style={{ background: 'var(--color-papel-elevado)' }}
+              >
                 <span>{nome.get(r.category_id) ?? 'Receita'}</span>
                 <span className="tabular font-medium">{formatMoney(Number(r.valor))}</span>
               </li>
