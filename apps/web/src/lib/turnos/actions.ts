@@ -120,6 +120,53 @@ export async function excluirTransacao(formData: FormData): Promise<void> {
 
   revalidatePath('/app');
   revalidatePath('/app/turno');
+  revalidatePath('/app/transacoes');
+}
+
+/** Mesma exclusão de sempre, mas de dentro da tela de edição — aí faz sentido
+ * voltar pra lista em vez de deixar a pessoa numa tela de um lançamento que
+ * não existe mais. */
+export async function excluirTransacaoEVoltar(formData: FormData): Promise<void> {
+  await excluirTransacao(formData);
+  redirect('/app/transacoes');
+}
+
+const edicaoSchema = z.object({
+  id: z.string().uuid(),
+  category_id: z.string().uuid('Escolha a categoria.'),
+  valor: numeroObrigatorio('Informe o valor.'),
+  description: z.string().trim().max(120).optional(),
+});
+
+/**
+ * Edição de um lançamento avulso (seção 12 — edição em linha nas Transações).
+ * Só altera categoria, valor e descrição: `kind`, data e turno não mudam por
+ * aqui, porque trocar isso reclassificaria o lançamento — melhor excluir e
+ * lançar de novo nesse caso.
+ */
+export async function atualizarTransacao(
+  _estado: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const parsed = edicaoSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return erroDeZod(parsed.error);
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('transactions')
+    .update({
+      category_id: parsed.data.category_id,
+      valor: parsed.data.valor,
+      description: parsed.data.description || null,
+    })
+    .eq('id', parsed.data.id);
+
+  if (error) return { erro: 'Não foi possível salvar as alterações.' };
+
+  revalidatePath('/app');
+  revalidatePath('/app/turno');
+  revalidatePath('/app/transacoes');
+  redirect('/app/transacoes');
 }
 
 // ---------------------------------------------------------------------------
