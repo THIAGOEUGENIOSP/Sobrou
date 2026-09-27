@@ -91,7 +91,6 @@ a[role='button'] {
 /* Cartão padrão: mesma sombra baixa em toda a tela, em vez de cada componente inventar a sua. */
 .cartao {
   background: var(--color-papel-elevado);
-  border: 1px solid var(--color-borda);
   border-radius: var(--radius-cartao);
   box-shadow: var(--sombra-cartao);
 }
