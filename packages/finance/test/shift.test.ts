@@ -5,6 +5,7 @@ import {
   faturamentoTotal,
   kmRodados,
   litrosEstimados,
+  segundosTrabalhados,
   type ShiftInput,
 } from '../src/shift';
 
@@ -203,5 +204,58 @@ describe('nenhuma divisão por zero chega à tela', () => {
     });
     expect(t.qtdCorridas).toBeNull();
     expect(t.valorMedioPorCorrida).toBeNull();
+  });
+});
+
+describe('segundosTrabalhados', () => {
+  it('conta o tempo cheio quando não houve pausa', () => {
+    const s = segundosTrabalhados(
+      '2026-09-21T08:00:00Z',
+      '2026-09-21T09:00:00Z',
+      0,
+      null,
+    );
+    expect(s).toBe(3600);
+  });
+
+  it('desconta pausas já concluídas', () => {
+    const s = segundosTrabalhados(
+      '2026-09-21T08:00:00Z',
+      '2026-09-21T09:00:00Z',
+      600, // 10 minutos já pausados antes
+      null,
+    );
+    expect(s).toBe(3000);
+  });
+
+  it('desconta a pausa em andamento agora', () => {
+    const s = segundosTrabalhados(
+      '2026-09-21T08:00:00Z',
+      '2026-09-21T09:00:00Z',
+      0,
+      '2026-09-21T08:45:00Z', // pausou faltando 15 minutos
+    );
+    expect(s).toBe(2700);
+  });
+
+  it('soma pausas concluídas e a pausa em andamento', () => {
+    const s = segundosTrabalhados(
+      '2026-09-21T08:00:00Z',
+      '2026-09-21T09:00:00Z',
+      300,
+      '2026-09-21T08:50:00Z',
+    );
+    // 3600 - 300 (pausa anterior) - 600 (pausa em andamento) = 2700
+    expect(s).toBe(2700);
+  });
+
+  it('nunca fica negativo, mesmo com pausas maiores que o turno', () => {
+    const s = segundosTrabalhados(
+      '2026-09-21T08:00:00Z',
+      '2026-09-21T08:30:00Z',
+      3600,
+      null,
+    );
+    expect(s).toBe(0);
   });
 });
