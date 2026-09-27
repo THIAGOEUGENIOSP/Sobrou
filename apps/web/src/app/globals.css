@@ -66,6 +66,10 @@ body {
 body {
   font-family: var(--fonte-texto);
   -webkit-font-smoothing: antialiased;
+  /* Sem o flash cinza padrão do navegador ao tocar — o app já dá seu próprio
+     feedback de toque (ver `a:active`/`button:active` abaixo). */
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
 }
 
 h1,
@@ -93,4 +97,47 @@ a[role='button'] {
   background: var(--color-papel-elevado);
   border-radius: var(--radius-cartao);
   box-shadow: var(--sombra-cartao);
+}
+
+/*
+ * Microinterações (seção 22): todo link e botão dá um feedback tátil sutil —
+ * "afunda" um pouco ao toque, sem esperar CSS específico de cada componente.
+ * Cor/fundo também transicionam suavemente, em vez de trocar seco.
+ */
+a,
+button {
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+
+a:active,
+button:active {
+  transform: scale(0.97);
+}
+
+/* Acessibilidade (seção 26): todo elemento focável — teclado, leitor de tela,
+   navegação por switch — ganha um contorno visível na cor de marca. O toque
+   comum não aciona `:focus-visible`, então isso não interfere no uso normal. */
+:focus-visible {
+  outline: 2px solid var(--color-marca);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
+/* Quem pede menos movimento não recebe nem o "afundar" nem as transições —
+   só a mudança de estado, direto. */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+  }
+
+  a:active,
+  button:active {
+    transform: none;
+  }
 }
