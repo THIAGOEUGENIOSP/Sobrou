@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div
       className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 pt-6"
-      style={{ paddingBottom: 'calc(5.5rem + max(env(safe-area-inset-bottom, 0px), 0.75rem))' }}
+      style={{ paddingBottom: 'calc(6rem + max(env(safe-area-inset-bottom, 0px), 0.75rem))' }}
     >
       <AppNav admin={admin} />
       <main className="flex-1">{children}</main>
