@@ -27,7 +27,10 @@ export default async function MetasPage() {
       </p>
 
       {!podeUsar ? (
-        <div className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-6 text-center">
+        <div
+          className="rounded-[var(--radius-cartao)] p-6 text-center"
+          style={{ background: 'var(--color-papel-suave)' }}
+        >
           <p className="font-medium">As metas fazem parte do plano Premium.</p>
           <p className="mt-1 text-sm text-[var(--color-tinta-suave)]">
             Enquanto isso, o dashboard e os relatórios continuam mostrando tudo o que você registra.
@@ -76,7 +79,10 @@ function CartaoMeta({ item }: { item: MetaComProgresso }) {
   const pct = Math.min(progresso.percentual ?? 0, 100);
 
   return (
-    <article className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] p-4">
+    <article
+      className="rounded-[var(--radius-cartao)] p-4"
+      style={{ background: 'var(--color-papel-elevado)', boxShadow: 'var(--sombra-cartao)' }}
+    >
       <div className="mb-1 flex items-baseline justify-between gap-3">
         <h3 className="font-medium">
           {item.rotulo}
