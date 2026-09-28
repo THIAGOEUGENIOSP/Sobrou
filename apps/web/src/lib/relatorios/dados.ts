@@ -33,6 +33,7 @@ export interface DadosPeriodo {
     snap_reserva_veiculo: number | null;
     snap_reserva_emerg: number | null;
     snap_disponivel: number | null;
+    snap_corridas: number | null;
   }>;
   /** Faturamento por plataforma no período. */
   porPlataforma: Array<{ nome: string; cor: string | null; valor: number; corridas: number }>;
@@ -68,7 +69,7 @@ export async function carregarPeriodo(de: string, ate: string): Promise<DadosPer
   const { data: turnos } = await supabase
     .from('shifts')
     .select(
-      'id, work_date, snap_km, snap_horas, snap_litros, snap_faturamento, snap_custo_combustivel, snap_outras_despesas, snap_resultado_op, snap_reserva_veiculo, snap_reserva_emerg, snap_disponivel',
+      'id, work_date, snap_km, snap_horas, snap_litros, snap_faturamento, snap_custo_combustivel, snap_outras_despesas, snap_resultado_op, snap_reserva_veiculo, snap_reserva_emerg, snap_disponivel, snap_corridas',
     )
     .eq('status', 'fechado')
     .gte('work_date', deEfetivo)
@@ -122,6 +123,7 @@ export async function carregarPeriodo(de: string, ate: string): Promise<DadosPer
     reservaVeiculo: Number(t.snap_reserva_veiculo ?? 0),
     reservaEmergencia: Number(t.snap_reserva_emerg ?? 0),
     disponivel: Number(t.snap_disponivel ?? 0),
+    qtdCorridas: t.snap_corridas !== null && t.snap_corridas !== undefined ? Number(t.snap_corridas) : null,
   }));
 
   const totais = agregarPeriodo(snapshots, {
