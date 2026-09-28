@@ -10,6 +10,7 @@ import {
   safeDiv,
 } from '@sobrou/finance';
 import { createClient } from '@/lib/supabase/server';
+import { ExcluirTurno } from '@/app/app/turno/historico/excluir-turno';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,10 +127,19 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
         </section>
       )}
 
-      <p className="text-xs text-[var(--color-tinta-suave)]">
+      <p className="mb-4 text-xs text-[var(--color-tinta-suave)]">
         Estes números foram congelados no fechamento. Mudar o consumo do veículo ou os percentuais
         de distribuição daqui para frente não altera este dia.
       </p>
+
+      {turno.status === 'fechado' && (
+        <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: 'var(--color-borda)' }}>
+          <Link href="/app/turno/historico" className="text-sm text-[var(--color-marca)]">
+            Ver histórico de turnos
+          </Link>
+          <ExcluirTurno id={turno.id} rotulo="este turno" />
+        </div>
+      )}
     </>
   );
 }
