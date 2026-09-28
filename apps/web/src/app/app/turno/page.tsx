@@ -3,11 +3,14 @@ import { redirect } from 'next/navigation';
 import {
   custoCombustivelEstimado,
   formatConsumo,
+  formatKm,
   formatMoney,
   formatRate,
+  safeDiv,
 } from '@sobrou/finance';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
+import { BotaoAjustes } from '@/components/cabecalho';
 import { cancelarTurno, excluirTransacao, pausarTurno, retomarTurno } from '@/lib/turnos/actions';
 import { FormularioIniciarTurno } from './iniciar';
 import { Cronometro } from './cronometro';
@@ -127,18 +130,30 @@ export default async function TurnoPage() {
   const faturamentoPorHora =
     segundosDecorridos > 60 ? faturamento / (segundosDecorridos / 3600) : null;
 
+  const custoPorKm = combustivelEstimado !== null ? safeDiv(combustivelEstimado, kmInformado, 2) : null;
+
   const pausado = Boolean(turno.paused_at);
 
   return (
     <>
-      <div className="mb-1 flex items-center gap-2">
-        <span
-          className="h-2 w-2 rounded-full"
-          style={{ background: pausado ? 'var(--color-aviso)' : 'var(--color-positivo)' }}
-        />
-        <h1 className="text-xl font-bold">{pausado ? 'Turno pausado' : 'Rodando agora'}</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: pausado ? 'var(--color-aviso)' : 'var(--color-positivo)' }}
+          />
+          <span>
+            <span className="block text-xs text-[var(--color-tinta-suave)]">
+              Turno em andamento
+            </span>
+            <span className="block text-lg font-bold leading-tight">
+              {pausado ? 'Pausado' : 'Rodando agora'}
+            </span>
+          </span>
+        </div>
+        <BotaoAjustes />
       </div>
-      <p className="mb-4 text-sm text-[var(--color-tinta-suave)]">
+      <p className="mb-2 text-xs text-[var(--color-tinta-suave)]">
         Começou às{' '}
         {new Date(turno.started_at).toLocaleTimeString('pt-BR', {
           hour: '2-digit',
@@ -155,85 +170,103 @@ export default async function TurnoPage() {
       />
 
       <section
-        className="mt-5 rounded-[var(--radius-cartao)] p-5"
+        className="mt-3 rounded-[var(--radius-cartao)] p-5"
         style={{ background: 'var(--color-positivo)' }}
       >
-        <p className="text-sm font-medium text-black/70">Faturamento até agora</p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-medium text-black/70">Faturamento</p>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeOpacity="0.6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M5 19 19 5M9 5h10v10" />
+          </svg>
+        </div>
         <p className="tabular mt-1 text-4xl font-extrabold text-black">
           {formatMoney(faturamento)}
         </p>
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-sm text-black/70">
-          <span>
-            {totalCorridas > 0 ? `${totalCorridas} corridas` : `${listaGanhos.length} lançamentos`}
-          </span>
-          <span>
-            {faturamentoPorHora !== null
-              ? `${formatRate(faturamentoPorHora, 'h')}`
-              : 'R$/h em instantes'}
-          </span>
-        </div>
+        <p className="mt-3 border-t border-black/10 pt-3 text-sm text-black/70">
+          {totalCorridas > 0 ? `${totalCorridas} corridas` : `${listaGanhos.length} lançamentos`}
+          {temKm && ` · ${formatKm(kmInformado, 0)}`}
+          {faturamentoPorHora !== null && ` · ${formatRate(faturamentoPorHora, 'h')}`}
+        </p>
       </section>
 
       <section
         className="mt-3 rounded-[var(--radius-cartao)] p-5"
         style={{ background: 'var(--color-papel-suave)' }}
       >
-        <h2 className="mb-2 text-sm font-medium text-[var(--color-tinta-suave)]">
+        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[var(--color-tinta-suave)]">
           Resultado estimado
+          <span title="Faturamento − despesas do turno − combustível estimado" aria-hidden>
+            ⓘ
+          </span>
         </h2>
         <p className="tabular text-2xl font-bold">{formatMoney(resultadoEstimado)}</p>
-        <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
-          Faturamento − despesas do turno
-          {combustivelEstimado !== null
-            ? ` − combustível estimado (${formatMoney(combustivelEstimado)}, pelo km informado nas corridas)`
-            : ' — combustível ainda não entra na conta: nenhuma corrida informou km rodado'}
-          .
-        </p>
+        <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">Após custos e reservas</p>
+
+        {combustivelEstimado !== null ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <ChipEstimativa
+              valor={formatConsumo(parametros.consumo)}
+              rotulo="Consumo"
+              icone={<path d="M12 3s6 6.5 6 10.5a6 6 0 1 1-12 0C6 9.5 12 3 12 3Z" />}
+            />
+            <ChipEstimativa
+              valor={formatRate(custoPorKm, 'km')}
+              rotulo="Custo por km"
+              icone={<path d="M4 16l4-8h2l-1.5 5H13l4-8h2l-5 11H12l1-3H9l-1 3H6l-2-3Z" />}
+            />
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-[var(--color-tinta-suave)]">
+            Combustível ainda não entra na conta: nenhuma corrida informou km rodado.
+          </p>
+        )}
       </section>
 
-      <Link
-        href="/app/turno/ganho"
-        className="mt-5 block w-full rounded-full bg-[var(--color-marca)] px-6 py-4 text-center font-semibold text-white"
-      >
-        + Adicionar ganho
-      </Link>
-
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <Link
-          href="/app/abastecimentos/novo"
-          className="rounded-[var(--radius-cartao)] p-4 text-center font-medium"
-          style={{ background: 'var(--color-info-suave)', color: 'var(--color-info)' }}
-        >
-          + Abastecimento
-        </Link>
-        <Link
-          href="/app/lancamentos/novo"
-          className="rounded-[var(--radius-cartao)] p-4 text-center font-medium"
-          style={{ background: 'var(--color-alerta-suave)', color: 'var(--color-alerta)' }}
-        >
-          + Despesa
-        </Link>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-2 gap-3">
         <form action={pausado ? retomarTurno : pausarTurno}>
           <input type="hidden" name="id" value={turno.id} />
           <button
             type="submit"
-            className="w-full rounded-full border px-6 py-3 text-center font-medium"
+            className="flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-center font-medium"
             style={{ borderColor: 'var(--color-borda)' }}
           >
+            {pausado ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M8 5v14l11-7Z" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
+              </svg>
+            )}
             {pausado ? 'Retomar' : 'Pausar'}
           </button>
         </form>
         <Link
           href="/app/turno/fechar"
-          className="rounded-full px-6 py-3 text-center font-semibold text-white"
-          style={{ background: 'var(--color-tinta)' }}
+          className="flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-center font-semibold text-white"
+          style={{ background: 'var(--color-alerta)' }}
         >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <rect x="6" y="6" width="12" height="12" rx="2" />
+          </svg>
           Encerrar turno
         </Link>
       </div>
+
+      <p className="mt-4 text-center text-sm text-[var(--color-tinta-suave)]">
+        <Link href="/app/turno/ganho" className="font-medium text-[var(--color-marca)]">
+          + Adicionar ganho
+        </Link>
+        {' · '}
+        <Link href="/app/abastecimentos/novo" className="font-medium text-[var(--color-marca)]">
+          Abastecimento
+        </Link>
+        {' · '}
+        <Link href="/app/lancamentos/novo" className="font-medium text-[var(--color-marca)]">
+          Despesa
+        </Link>
+      </p>
 
       {listaGanhos.length > 0 && (
         <section className="mt-8">
@@ -333,5 +366,30 @@ export default async function TurnoPage() {
         </button>
       </form>
     </>
+  );
+}
+
+function ChipEstimativa({
+  valor,
+  rotulo,
+  icone,
+}: {
+  valor: string;
+  rotulo: string;
+  icone: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 rounded-[var(--radius-cartao)] p-3"
+      style={{ background: 'var(--color-papel-elevado)' }}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-marca)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none" aria-hidden>
+        {icone}
+      </svg>
+      <span className="min-w-0">
+        <span className="tabular block text-sm font-bold">{valor}</span>
+        <span className="block text-xs text-[var(--color-tinta-suave)]">{rotulo}</span>
+      </span>
+    </div>
   );
 }
