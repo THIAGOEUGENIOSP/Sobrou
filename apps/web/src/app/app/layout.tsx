@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { registrarConsentimentosPendentes } from '@/lib/auth/actions';
 import { ehAdmin } from '@/lib/admin/guarda';
 import { AppNav } from '@/components/app-nav';
+import { carregarRegistroRapido } from '@/lib/registro-rapido/dados';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,20 +25,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: perfil } = await supabase
     .from('profiles')
-    .select('onboarding_done, display_name')
+    .select('onboarding_done, display_name, timezone')
     .eq('user_id', user.id)
     .maybeSingle();
 
   if (!perfil?.onboarding_done) redirect('/onboarding');
 
   const admin = await ehAdmin();
+  const registroRapido = await carregarRegistroRapido(perfil.timezone ?? 'America/Sao_Paulo');
 
   return (
     <div
       className="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-4 pt-6"
       style={{ paddingBottom: 'calc(6rem + max(env(safe-area-inset-bottom, 0px), 0.75rem))' }}
     >
-      <AppNav admin={admin} />
+      <AppNav admin={admin} registroRapido={registroRapido} />
       <main className="flex-1">{children}</main>
     </div>
   );
