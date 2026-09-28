@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { adicionarGanho } from '@/lib/turnos/actions';
-import { Aviso, BotaoEnviar, Campo } from '@/components/formulario';
+import { Aviso, BotaoEnviar, Campo, CampoMoeda } from '@/components/formulario';
 
 type Plataforma = { id: string; name: string; favorita: boolean };
 
@@ -82,15 +82,7 @@ export function FormularioGanho({
         <p className="mb-3 text-sm text-[var(--color-alerta)]">{estado.campos.category_id}</p>
       )}
 
-      <Campo
-        label="Valor da corrida"
-        name="valor"
-        inputMode="decimal"
-        placeholder="18,50"
-        required
-        autoFocus
-        erro={estado.campos?.valor}
-      />
+      <CampoMoeda label="Valor da corrida" name="valor" required autoFocus erro={estado.campos?.valor} />
       <Campo
         label="Quantas corridas (opcional)"
         name="qtd_corridas"
@@ -98,6 +90,10 @@ export function FormularioGanho({
         placeholder="1"
         erro={estado.campos?.qtd_corridas}
       />
+      <p className="-mt-2 mb-4 text-sm text-[var(--color-tinta-suave)]">
+        Deixe em branco se foi uma corrida só. Preencha aqui só se esse valor for a soma de várias
+        corridas juntas.
+      </p>
 
       {!maisDetalhes ? (
         <button
