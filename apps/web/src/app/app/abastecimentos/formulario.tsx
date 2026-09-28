@@ -46,6 +46,12 @@ export function FormularioAbastecimento({
 }) {
   const [estado, acao] = useActionState(salvarAbastecimento, {});
   const [v, setV] = useState(valores);
+  // Só abre de cara quando já tem desconto/cashback (edição de um lançamento
+  // que usa isso) — pro caso comum, o motorista só quer dizer litros e quanto
+  // pagou; preço, desconto e cashback ficam escondidos até serem pedidos.
+  const [detalhesPreco, setDetalhesPreco] = useState(
+    () => Boolean(lerNumeroBR(valores.desconto) > 0 || lerNumeroBR(valores.cashback) > 0),
+  );
 
   const set = (campo: keyof ValoresAbastecimento, valor: string | boolean) =>
     setV((atual) => ({ ...atual, [campo]: valor }));
@@ -77,6 +83,15 @@ export function FormularioAbastecimento({
 
   function aoMudarDesconto(texto: string) {
     setV((atual) => ({ ...atual, desconto: texto, valor_pago: aplicarDesconto(atual.valor_bruto, texto) }));
+  }
+
+  /**
+   * Modo simples (sem "Detalhes de preço" aberto): sem desconto nem cashback
+   * na conta, então o bruto é o mesmo valor pago — não tem por que perguntar
+   * os dois.
+   */
+  function aoMudarPagoSimples(texto: string) {
+    setV((atual) => ({ ...atual, valor_pago: texto, valor_bruto: texto }));
   }
 
   const previa = useMemo(() => {
@@ -148,15 +163,6 @@ export function FormularioAbastecimento({
 
       <div className="grid grid-cols-2 gap-3">
         <Campo
-          label="Preço na placa"
-          name="preco_anunciado"
-          inputMode="decimal"
-          placeholder="4,19"
-          value={v.preco_anunciado}
-          onChange={(e) => set('preco_anunciado', e.target.value)}
-          erro={estado.campos?.preco_anunciado}
-        />
-        <Campo
           label="Litros"
           name="litros"
           inputMode="decimal"
@@ -167,44 +173,77 @@ export function FormularioAbastecimento({
           erro={estado.campos?.litros}
         />
         <Campo
-          label="Valor bruto"
-          name="valor_bruto"
-          inputMode="decimal"
-          placeholder="145,43"
-          required
-          value={v.valor_bruto}
-          onChange={(e) => aoMudarBruto(e.target.value)}
-          erro={estado.campos?.valor_bruto}
-        />
-        <Campo
-          label="Desconto"
-          name="desconto"
-          inputMode="decimal"
-          placeholder="10,00"
-          value={v.desconto}
-          onChange={(e) => aoMudarDesconto(e.target.value)}
-          erro={estado.campos?.desconto}
-        />
-        <Campo
-          label="Cashback"
-          name="cashback"
-          inputMode="decimal"
-          placeholder="0,00"
-          value={v.cashback}
-          onChange={(e) => set('cashback', e.target.value)}
-          erro={estado.campos?.cashback}
-        />
-        <Campo
           label="Valor pago"
           name="valor_pago"
           inputMode="decimal"
           placeholder="135,43"
           required
           value={v.valor_pago}
-          onChange={(e) => set('valor_pago', e.target.value)}
+          onChange={(e) =>
+            detalhesPreco ? set('valor_pago', e.target.value) : aoMudarPagoSimples(e.target.value)
+          }
           erro={estado.campos?.valor_pago}
         />
       </div>
+
+      {!detalhesPreco ? (
+        <>
+          <input type="hidden" name="preco_anunciado" value={v.preco_anunciado} />
+          <input type="hidden" name="valor_bruto" value={v.valor_bruto || v.valor_pago} />
+          <input type="hidden" name="desconto" value={v.desconto} />
+          <input type="hidden" name="cashback" value={v.cashback} />
+          <button
+            type="button"
+            onClick={() => setDetalhesPreco(true)}
+            className="mb-4 text-sm font-medium text-[var(--color-marca)]"
+          >
+            + Ajustar preço, desconto ou cashback
+          </button>
+        </>
+      ) : (
+        <fieldset className="mb-2">
+          <legend className="mb-2 text-sm font-medium">Detalhes de preço (opcional)</legend>
+          <div className="grid grid-cols-2 gap-3">
+            <Campo
+              label="Preço na placa"
+              name="preco_anunciado"
+              inputMode="decimal"
+              placeholder="4,19"
+              value={v.preco_anunciado}
+              onChange={(e) => set('preco_anunciado', e.target.value)}
+              erro={estado.campos?.preco_anunciado}
+            />
+            <Campo
+              label="Valor bruto"
+              name="valor_bruto"
+              inputMode="decimal"
+              placeholder="145,43"
+              required
+              value={v.valor_bruto}
+              onChange={(e) => aoMudarBruto(e.target.value)}
+              erro={estado.campos?.valor_bruto}
+            />
+            <Campo
+              label="Desconto"
+              name="desconto"
+              inputMode="decimal"
+              placeholder="10,00"
+              value={v.desconto}
+              onChange={(e) => aoMudarDesconto(e.target.value)}
+              erro={estado.campos?.desconto}
+            />
+            <Campo
+              label="Cashback"
+              name="cashback"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={v.cashback}
+              onChange={(e) => set('cashback', e.target.value)}
+              erro={estado.campos?.cashback}
+            />
+          </div>
+        </fieldset>
+      )}
 
       {previa?.real != null && (
         <div className="mb-4 rounded-[var(--radius-cartao)] border border-[var(--color-marca)] p-4">
