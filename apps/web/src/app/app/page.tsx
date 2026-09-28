@@ -18,6 +18,7 @@ import { carregarMetas } from '@/lib/metas/dados';
 import { can } from '@/lib/entitlements';
 import { createClient } from '@/lib/supabase/server';
 import { BotaoSino, LogoSobrou } from '@/components/cabecalho';
+import { Confirmacao } from '@/components/confirmacao';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,7 @@ const TITULO_SOBROU: Record<ChavePeriodo, string> = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string }>;
+  searchParams: Promise<{ periodo?: string; ok?: string; valor?: string }>;
 }) {
   const sp = await searchParams;
   const ctx = await carregarContexto();
@@ -161,6 +162,12 @@ export default async function DashboardPage({
         <LogoSobrou />
         <BotaoSino />
       </div>
+
+      {sp.ok === 'despesa' && sp.valor && (
+        <Confirmacao fecharHref="/app">
+          Despesa de R$ {sp.valor} lançada — já entra nas suas contas de hoje.
+        </Confirmacao>
+      )}
 
       <p className="text-sm" style={{ color: 'var(--color-tinta-suave)' }}>
         {primeiroNome ? `${saudacaoPorHora(horaLocal)}, ${primeiroNome}` : saudacaoPorHora(horaLocal)}
