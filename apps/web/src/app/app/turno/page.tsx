@@ -137,16 +137,19 @@ export default async function TurnoPage() {
   return (
     <>
       <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <span
-            className="h-2 w-2 rounded-full"
-            style={{ background: pausado ? 'var(--color-aviso)' : 'var(--color-positivo)' }}
+            className="h-[18px] w-[18px] flex-none rounded-full"
+            style={{
+              background: pausado ? '#f4b942' : '#31D8A4',
+              boxShadow: pausado ? '0 0 10px 1px rgba(244,185,66,0.55)' : '0 0 10px 1px rgba(49,216,164,0.55)',
+            }}
           />
           <span>
-            <span className="block text-xs text-[var(--color-tinta-suave)]">
+            <span className="block text-[18px] font-semibold leading-tight" style={{ color: '#F5F6FA' }}>
               Turno em andamento
             </span>
-            <span className="block text-lg font-bold leading-tight">
+            <span className="block text-[13px] font-medium leading-tight" style={{ color: '#66C9B1' }}>
               {pausado ? 'Pausado' : 'Rodando agora'}
             </span>
           </span>
@@ -169,72 +172,99 @@ export default async function TurnoPage() {
         pausedAt={turno.paused_at}
       />
 
+      {/* Cores exatas do modelo (não são os tokens globais — pedido específico
+          desta tela, pra bater 1:1 com a referência do Thiago). */}
       <section
-        className="mt-3 rounded-[var(--radius-cartao)] p-5"
-        style={{ background: 'var(--color-positivo)' }}
+        className="mt-3 p-5"
+        style={{
+          background: 'linear-gradient(160deg, #102C29 0%, #0C2726 100%)',
+          borderRadius: '22px',
+          border: '1px solid rgba(102, 201, 177, 0.14)',
+        }}
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-medium text-black/70">Faturamento</p>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" strokeOpacity="0.6" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <p className="text-[13px] font-medium" style={{ color: '#A5ACB7' }}>
+            Faturamento
+          </p>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#31D8A4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M5 19 19 5M9 5h10v10" />
           </svg>
         </div>
-        <p className="tabular mt-1 text-4xl font-extrabold text-black">
+        <p className="tabular mt-1 text-[35px] font-bold leading-tight" style={{ color: '#31D8A4' }}>
           {formatMoney(faturamento)}
         </p>
-        <p className="mt-3 border-t border-black/10 pt-3 text-sm text-black/70">
-          {totalCorridas > 0 ? `${totalCorridas} corridas` : `${listaGanhos.length} lançamentos`}
-          {temKm && ` · ${formatKm(kmInformado, 0)}`}
-          {faturamentoPorHora !== null && ` · ${formatRate(faturamentoPorHora, 'h')}`}
+        <p
+          className="mt-3 flex items-center justify-around border-t pt-3 text-[14px] font-semibold"
+          style={{ borderColor: 'rgba(102, 201, 177, 0.14)', color: '#F5F6FA' }}
+        >
+          <span>{totalCorridas > 0 ? `${totalCorridas} corridas` : `${listaGanhos.length} lançamentos`}</span>
+          {temKm && <span>{formatKm(kmInformado, 0)}</span>}
+          {faturamentoPorHora !== null && <span>{formatRate(faturamentoPorHora, 'h')}</span>}
         </p>
       </section>
 
       <section
-        className="mt-3 rounded-[var(--radius-cartao)] p-5"
-        style={{ background: 'var(--color-papel-suave)' }}
+        className="mt-3 p-5"
+        style={{
+          background: 'linear-gradient(160deg, #182535 0%, #151E2C 100%)',
+          borderRadius: '21px',
+          border: '1px solid rgba(148, 163, 184, 0.1)',
+        }}
       >
-        <h2 className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[var(--color-tinta-suave)]">
-          Resultado estimado
-          <span title="Faturamento − despesas do turno − combustível estimado" aria-hidden>
-            ⓘ
+        <div className="flex items-center justify-between">
+          <h2 className="text-[16px] font-medium" style={{ color: '#9FB0AE' }}>
+            Resultado estimado
+          </h2>
+          <span
+            className="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs"
+            style={{ border: '1px solid #A5ACB7', color: '#A5ACB7' }}
+            title="Faturamento − despesas do turno − combustível estimado"
+            aria-hidden
+          >
+            i
           </span>
-        </h2>
-        <p className="tabular text-2xl font-bold" style={{ color: 'var(--color-positivo)' }}>
+        </div>
+        <p className="tabular mt-1 text-[36px] font-bold leading-tight" style={{ color: '#31D8A4' }}>
           {formatMoney(resultadoEstimado)}
         </p>
-        <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">Após custos e reservas</p>
+        <p className="mt-1 text-[13px]" style={{ color: '#A5ACB7' }}>
+          Após custos e reservas
+        </p>
 
         {combustivelEstimado !== null ? (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <ChipEstimativa
               valor={formatConsumo(parametros.consumo)}
               rotulo="Consumo"
-              corIcone="var(--color-marca)"
-              corFundo="var(--color-marca-suave)"
+              corIcone="#31D8A4"
               icone={<path d="M12 3s6 6.5 6 10.5a6 6 0 1 1-12 0C6 9.5 12 3 12 3Z" />}
             />
             <ChipEstimativa
               valor={formatRate(custoPorKm, 'km')}
               rotulo="Custo por km"
-              corIcone="#60a5fa"
-              corFundo="rgba(96,165,250,0.14)"
+              corIcone="#F5F6FA"
               icone={<path d="M4 16l4-8h2l-1.5 5H13l4-8h2l-5 11H12l1-3H9l-1 3H6l-2-3Z" />}
             />
           </div>
         ) : (
-          <p className="mt-3 text-xs text-[var(--color-tinta-suave)]">
+          <p className="mt-3 text-xs" style={{ color: '#A5ACB7' }}>
             Combustível ainda não entra na conta: nenhuma corrida informou km rodado.
           </p>
         )}
       </section>
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <form action={pausado ? retomarTurno : pausarTurno}>
+      <div className="mt-5 flex gap-[10px]">
+        <form action={pausado ? retomarTurno : pausarTurno} className="basis-[39%]">
           <input type="hidden" name="id" value={turno.id} />
           <button
             type="submit"
-            className="flex h-[52px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-center text-sm font-medium"
-            style={{ borderColor: 'var(--color-borda)' }}
+            className="flex h-[64px] w-full items-center justify-center gap-2 whitespace-nowrap px-2 text-center text-[15px] font-medium"
+            style={{
+              background: 'linear-gradient(160deg, #102C29 0%, #0C2726 100%)',
+              border: '1px solid rgba(102, 201, 177, 0.35)',
+              borderRadius: '17px',
+              color: '#66C9B1',
+            }}
           >
             {pausado ? (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="flex-none">
@@ -250,8 +280,11 @@ export default async function TurnoPage() {
         </form>
         <Link
           href="/app/turno/fechar"
-          className="flex h-[52px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 text-center text-sm font-semibold text-white"
-          style={{ background: 'var(--color-alerta)' }}
+          className="flex h-[64px] basis-[59%] items-center justify-center gap-2 whitespace-nowrap px-2 text-center text-[15px] font-semibold text-white"
+          style={{
+            background: 'linear-gradient(135deg, #FF5744 0%, #FF4039 100%)',
+            borderRadius: '17px',
+          }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="flex-none">
             <rect x="6" y="6" width="12" height="12" rx="2" />
@@ -379,31 +412,28 @@ function ChipEstimativa({
   valor,
   rotulo,
   icone,
-  corIcone = 'var(--color-marca)',
-  corFundo = 'var(--color-marca-suave)',
+  corIcone,
 }: {
   valor: string;
   rotulo: string;
   icone: React.ReactNode;
-  corIcone?: string;
-  corFundo?: string;
+  corIcone: string;
 }) {
   return (
     <div
-      className="flex items-center gap-2.5 rounded-[var(--radius-cartao)] p-3"
-      style={{ background: 'var(--color-papel-elevado)' }}
+      className="flex h-[65px] items-center gap-2.5 px-3"
+      style={{ background: '#102027', borderRadius: '17px' }}
     >
-      <span
-        className="flex h-8 w-8 flex-none items-center justify-center rounded-full"
-        style={{ background: corFundo }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={corIcone} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          {icone}
-        </svg>
-      </span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={corIcone} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none" aria-hidden>
+        {icone}
+      </svg>
       <span className="min-w-0">
-        <span className="tabular block text-sm font-bold">{valor}</span>
-        <span className="block text-xs text-[var(--color-tinta-suave)]">{rotulo}</span>
+        <span className="tabular block text-[16px] font-bold" style={{ color: '#F5F6FA' }}>
+          {valor}
+        </span>
+        <span className="block text-[13px]" style={{ color: '#A5ACB7' }}>
+          {rotulo}
+        </span>
       </span>
     </div>
   );
