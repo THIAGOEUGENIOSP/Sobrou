@@ -10,7 +10,7 @@ import type { ItemRegistroRapido } from '@/lib/registro-rapido/dados';
 /** Os 3 destinos ao redor do botão "+" central — sempre à mão. Os 2
  * primeiros ficam à esquerda dele, o último à direita. */
 const ITENS_PRINCIPAIS = [
-  { href: '/app', rotulo: 'Início', icone: 'dia' },
+  { href: '/app', rotulo: 'Início', icone: 'casa' },
   { href: '/app/turno', rotulo: 'Turno', icone: 'turno' },
   { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
 ] as const;
@@ -141,10 +141,10 @@ type Icone =
   | 'mais';
 
 const ICONES: Record<Icone, React.ReactNode> = {
-  dia: (
+  casa: (
     <>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
+      <path d="M4 11.5 12 4l8 7.5" />
+      <path d="M6 10v9a1 1 0 0 0 1 1h3.5v-5.5h3V20H17a1 1 0 0 0 1-1v-9" />
     </>
   ),
   consultor: (
