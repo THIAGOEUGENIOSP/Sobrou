@@ -17,6 +17,7 @@ import { resolverPeriodoDoUsuario } from '@/lib/relatorios/periodo';
 import { carregarMetas } from '@/lib/metas/dados';
 import { can } from '@/lib/entitlements';
 import { createClient } from '@/lib/supabase/server';
+import { BotaoSino, LogoSobrou } from '@/components/cabecalho';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,11 +157,15 @@ export default async function DashboardPage({
 
   return (
     <>
+      <div className="mb-4 flex items-center justify-between">
+        <LogoSobrou />
+        <BotaoSino />
+      </div>
+
       <p className="text-sm" style={{ color: 'var(--color-tinta-suave)' }}>
         {primeiroNome ? `${saudacaoPorHora(horaLocal)}, ${primeiroNome}` : saudacaoPorHora(horaLocal)}
       </p>
-      <h1 className="mb-1 text-2xl font-bold">Vamos pra cima hoje? 🚀</h1>
-      <p className="mb-5 text-sm text-[var(--color-tinta-suave)]">{periodo.rotulo}</p>
+      <h1 className="mb-4 text-2xl font-bold">Vamos pra cima hoje? 🚀</h1>
 
       {turnoAberto ? (
         <Link
@@ -195,6 +200,14 @@ export default async function DashboardPage({
         </Link>
       )}
 
+      <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[var(--color-tinta-suave)]">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M8 3v4M16 3v4M3 10h18" />
+        </svg>
+        {periodo.rotulo}
+      </p>
+
       {/* Abas de período: mesma ideia de `PERIODOS`, um subconjunto fixo de 4, sem
           precisar de JS no cliente — é só navegação por link. */}
       <div
@@ -227,7 +240,14 @@ export default async function DashboardPage({
             Assim que você fechar um turno neste período, seus resultados aparecem aqui.
           </p>
         </div>
-      ) : (
+      ) : null}
+
+      {/* Guia dos 4 passos: some assim que o motorista já fechou um turno hoje —
+          nesse ponto ele já entendeu o fluxo na prática e não precisa mais do
+          lembrete. Enquanto isso, é o primeiro texto que ele vê ao abrir o app. */}
+      {chave === 'hoje' && semDados && <GuiaRapido />}
+
+      {!semDados && (
         <>
           {/* Cartão único "Sobrou": a pergunta que importa primeiro é quanto ficou
               disponível, não o faturamento bruto — faturamento e custos+reservas
@@ -238,26 +258,52 @@ export default async function DashboardPage({
               style={{ background: 'var(--color-positivo)' }}
             >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-black/70">{TITULO_SOBROU[chave]}</p>
+                <p className="text-sm font-medium text-black/70 uppercase">{TITULO_SOBROU[chave]}</p>
                 {comparacaoDisponivel?.variacao !== null && comparacaoDisponivel?.variacao !== undefined && (
-                  <span className="tabular rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black/80">
-                    {formatVariacao(comparacaoDisponivel.variacao)} vs. período anterior
+                  <span className="tabular flex items-center gap-0.5 rounded-full bg-black/10 px-2 py-0.5 text-xs font-semibold text-black/80">
+                    {comparacaoDisponivel.direcao === 'baixa' ? '↓' : '↑'}
+                    {formatPercent(Math.abs(comparacaoDisponivel.variacao), 0)}
                   </span>
                 )}
               </div>
               <p className="tabular mt-1 text-4xl font-extrabold text-black">
                 {formatMoney(t.disponivel)}
               </p>
-              <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/10 pt-3 text-sm text-black/70">
-                <span>
-                  Faturamento <strong className="text-black">{formatMoney(t.faturamento)}</strong>
+              <div className="mt-4 flex items-center gap-4 border-t border-black/10 pt-3 text-sm text-black/70">
+                <span className="flex items-center gap-1.5">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M12 3s6 6.5 6 10.5a6 6 0 1 1-12 0C6 9.5 12 3 12 3Z" />
+                  </svg>
+                  <strong className="text-black">{formatMoney(t.faturamento)}</strong> Faturamento
                 </span>
-                <span>
-                  Custos + reservas{' '}
-                  <strong className="text-black">{formatMoney(t.faturamento - t.disponivel)}</strong>
+                <span className="flex items-center gap-1.5">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M4 15s1-8 8-12c0 0 3 5-1 9 1 1 2 1 3 0 1 3-1 7-5 7a5 5 0 0 1-5-4Z" />
+                  </svg>
+                  <strong className="text-black">{formatMoney(t.faturamento - t.disponivel)}</strong> Custos + reservas
                 </span>
               </div>
             </div>
+          </section>
+
+          <section className="mb-6 grid grid-cols-3 gap-2">
+            <CelulaIcone
+              rotulo="por hora"
+              valor={formatRate(t.faturamentoPorHora, 'h')}
+              icone={
+                <path d="M12 7v5l3.5 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+              }
+            />
+            <CelulaIcone
+              rotulo="por km"
+              valor={formatRate(t.faturamentoPorKm, 'km')}
+              icone={<path d="M4 16l4-8h2l-1.5 5H13l4-8h2l-5 11H12l1-3H9l-1 3H6l-2-3Z" />}
+            />
+            <CelulaIcone
+              rotulo="km rodados"
+              valor={formatKm(t.km, 0)}
+              icone={<path d="M9 18h6M8 3h8l2 6H6l2-6ZM4 9h16l1 4H3l1-4ZM7 17v3M17 17v3" />}
+            />
           </section>
 
           {chave === 'hoje' && metaDiaria && (
@@ -317,12 +363,6 @@ export default async function DashboardPage({
           <section className="mb-6 grid grid-cols-3 gap-2">
             <CelulaResumo titulo="Viagens" valor={qtd !== null ? String(qtd) : '—'} />
             <CelulaResumo titulo="Horas" valor={formatHoras(t.horas)} />
-            <CelulaResumo titulo="KM rodados" valor={formatKm(t.km, 0)} />
-          </section>
-
-          <section className="mb-6 grid grid-cols-3 gap-2">
-            <CelulaResumo titulo="R$/hora" valor={formatRate(t.faturamentoPorHora, 'h')} />
-            <CelulaResumo titulo="R$/km" valor={formatRate(t.faturamentoPorKm, 'km')} />
             <CelulaResumo
               titulo="Margem"
               valor={margemPct !== null ? formatPercent(margemPct, 0) : '—'}
@@ -451,6 +491,41 @@ export default async function DashboardPage({
   );
 }
 
+/** Chip com ícone — usado no trio logo abaixo do cartão "Sobrou hoje". */
+function CelulaIcone({
+  rotulo,
+  valor,
+  icone,
+}: {
+  rotulo: string;
+  valor: string;
+  icone: React.ReactNode;
+}) {
+  return (
+    <div
+      className="rounded-[var(--radius-cartao)] p-3 text-center"
+      style={{ background: 'var(--color-papel-suave)' }}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--color-marca)"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="mx-auto mb-1"
+        aria-hidden
+      >
+        {icone}
+      </svg>
+      <p className="tabular font-bold">{valor}</p>
+      <p className="text-xs text-[var(--color-tinta-suave)]">{rotulo}</p>
+    </div>
+  );
+}
+
 function CelulaResumo({ titulo, valor }: { titulo: string; valor: string }) {
   return (
     <div
@@ -504,5 +579,58 @@ function CartaoReserva({
       <p className="tabular mt-1 text-2xl font-bold">{valor}</p>
       <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">{detalhe}</p>
     </div>
+  );
+}
+
+const PASSOS_GUIA = [
+  {
+    titulo: 'Inicie seu turno',
+    texto: 'Toque no botão laranja "Iniciar turno" assim que sair pra rodar.',
+  },
+  {
+    titulo: 'Registre no botão "+"',
+    texto: 'A cada corrida, abastecimento ou despesa, toque no "+" da barra de baixo.',
+  },
+  {
+    titulo: 'Encerre no fim do dia',
+    texto: 'Na aba "Turno", toque em "Encerrar turno" — o app fecha as contas sozinho.',
+  },
+  {
+    titulo: 'Veja o que sobrou',
+    texto: 'Volte pro Início ou toque em "Relatórios" pra entender seu ganho de verdade.',
+  },
+] as const;
+
+/**
+ * Guia dos 4 passos — a resposta pra "o que eu faço agora?" de quem nunca
+ * usou um app assim. Fica só na aba "Hoje" e some sozinho assim que o
+ * motorista fecha o primeiro turno do dia; não é um tutorial permanente,
+ * é o empurrão do início.
+ */
+function GuiaRapido() {
+  return (
+    <section
+      className="mb-8 rounded-[var(--radius-cartao)] p-4"
+      style={{ background: 'var(--color-papel-suave)', border: '1px solid var(--color-borda)' }}
+    >
+      <h2 className="mb-3 font-semibold">Como usar o Sobrou, em 4 passos</h2>
+      <ol className="space-y-3">
+        {PASSOS_GUIA.map((passo, i) => (
+          <li key={passo.titulo} className="flex items-start gap-3">
+            <span
+              className="flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-bold"
+              style={{ background: 'var(--color-marca-suave)', color: 'var(--color-marca)' }}
+              aria-hidden
+            >
+              {i + 1}
+            </span>
+            <span>
+              <span className="block text-sm font-medium">{passo.titulo}</span>
+              <span className="block text-sm text-[var(--color-tinta-suave)]">{passo.texto}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
