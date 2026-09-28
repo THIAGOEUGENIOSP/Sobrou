@@ -259,7 +259,7 @@ export default async function RelatoriosPage({
                     <CartaoNumero rotulo="Corridas" valor={String(t.qtdCorridas)} />
                   )}
                   <CartaoNumero
-                    rotulo="Margem"
+                    rotulo="Margem (% sobra)"
                     valor={
                       t.faturamento > 0
                         ? formatPercent((t.resultadoOperacional / t.faturamento) * 100, 0)
@@ -284,6 +284,11 @@ export default async function RelatoriosPage({
                   <CartaoNumero rotulo="Manutenção realizada" valor={formatMoney(t.manutencaoRealizada)} />
                 </div>
                 <p className="mt-2 text-xs text-[var(--color-tinta-suave)]">
+                  Resultado operacional é antes de separar as reservas; o "Sobrou" que aparece no
+                  Início já é depois — a diferença entre os dois é justamente o que foi guardado pro
+                  carro e pra emergência.
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">
                   Reservado é o que foi separado no período; manutenção realizada é o que saiu de fato.
                   Os dois não se anulam.
                 </p>
