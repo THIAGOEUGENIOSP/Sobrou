@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { formatMoney } from '@sobrou/finance';
 import { BotaoSair } from '@/components/botao-sair';
+import type { ItemRegistroRapido } from '@/lib/registro-rapido/dados';
 
 /** Os 3 destinos ao redor do botão "+" central — sempre à mão. Os 2
  * primeiros ficam à esquerda dele, o último à direita. */
@@ -13,15 +15,88 @@ const ITENS_PRINCIPAIS = [
   { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
 ] as const;
 
-/** O resto — menos usado no dia a dia — mora atrás do botão "Mais". */
-const ITENS_MAIS = [
-  { href: '/app/transacoes', rotulo: 'Transações', icone: 'transacoes' },
-  { href: '/app/consultor', rotulo: 'Consultor', icone: 'consultor' },
-  { href: '/app/abastecimentos', rotulo: 'Postos', icone: 'posto' },
-  { href: '/app/reservas', rotulo: 'Reservas', icone: 'reservas' },
-  { href: '/app/metas', rotulo: 'Metas', icone: 'metas' },
-  { href: '/app/mensal', rotulo: 'Mês a mês', icone: 'mensal' },
-] as const;
+/**
+ * O resto — menos usado no dia a dia — mora atrás do botão "Mais", agrupado
+ * por assunto e com uma frase curta em cada item. Motorista sem prática com
+ * apps não decifra ícone sozinho; o nome + a frase dizem exatamente o que
+ * ele vai encontrar lá dentro, sem precisar adivinhar ou tocar pra descobrir.
+ */
+type IconeMais = 'transacoes' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto';
+type RotaMais =
+  | '/app/transacoes'
+  | '/app/consultor'
+  | '/app/metas'
+  | '/app/reservas'
+  | '/app/mensal'
+  | '/app/abastecimentos';
+
+interface ItemMais {
+  href: RotaMais;
+  rotulo: string;
+  subtitulo: string;
+  icone: IconeMais;
+}
+
+interface GrupoMais {
+  titulo: string;
+  itens: ItemMais[];
+}
+
+const GRUPOS_MAIS: GrupoMais[] = [
+  {
+    titulo: 'Seu dia a dia',
+    itens: [
+      {
+        href: '/app/transacoes',
+        rotulo: 'Transações',
+        subtitulo: 'Tudo que você ganhou e gastou',
+        icone: 'transacoes',
+      },
+      {
+        href: '/app/consultor',
+        rotulo: 'Consultor',
+        subtitulo: 'Dicas sobre o seu desempenho',
+        icone: 'consultor',
+      },
+    ],
+  },
+  {
+    titulo: 'Planejamento',
+    itens: [
+      {
+        href: '/app/metas',
+        rotulo: 'Metas',
+        subtitulo: 'Acompanhe suas metas de ganho',
+        icone: 'metas',
+      },
+      {
+        href: '/app/reservas',
+        rotulo: 'Reservas',
+        subtitulo: 'Dinheiro guardado pro carro e emergência',
+        icone: 'reservas',
+      },
+      {
+        href: '/app/mensal',
+        rotulo: 'Mês a mês',
+        subtitulo: 'Compare seus meses',
+        icone: 'mensal',
+      },
+    ],
+  },
+  {
+    titulo: 'Abastecimento',
+    itens: [
+      {
+        href: '/app/abastecimentos',
+        rotulo: 'Postos',
+        subtitulo: 'Seu histórico de abastecimentos',
+        icone: 'posto',
+      },
+    ],
+  },
+];
+
+const ITENS_MAIS: ItemMais[] = GRUPOS_MAIS.flatMap((g) => g.itens);
 
 /** As 4 ações do botão "+" central — o "registro rápido" global do app. */
 const ACOES_RAPIDAS = [
@@ -61,7 +136,7 @@ const ACOES_RAPIDAS = [
 
 type Icone =
   | (typeof ITENS_PRINCIPAIS)[number]['icone']
-  | (typeof ITENS_MAIS)[number]['icone']
+  | IconeMais
   | (typeof ACOES_RAPIDAS)[number]['icone']
   | 'mais';
 
@@ -160,7 +235,13 @@ function IconeSvg({ id, tamanho = 20 }: { id: Icone; tamanho?: number }) {
  * vez de decidir por você. O resto dos destinos, menos usados no dia a dia
  * (incluindo Transações), mora atrás do botão "Mais".
  */
-export function AppNav({ admin }: { admin: boolean }) {
+export function AppNav({
+  admin,
+  registroRapido,
+}: {
+  admin: boolean;
+  registroRapido: ItemRegistroRapido[];
+}) {
   const [maisAberto, setMaisAberto] = useState(false);
   const [novoAberto, setNovoAberto] = useState(false);
   const pathname = usePathname();
@@ -337,6 +418,47 @@ export function AppNav({ admin }: { admin: boolean }) {
                 </Link>
               ))}
             </div>
+
+            {registroRapido.length > 0 && (
+              <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
+                <h3 className="mb-2 text-sm font-semibold text-[var(--color-tinta-suave)]">
+                  Registro rápido
+                </h3>
+                <ul className="space-y-2">
+                  {registroRapido.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-[var(--radius-cartao)] p-3"
+                      style={{ background: 'var(--color-papel-suave)' }}
+                    >
+                      <span
+                        className="flex h-9 w-9 flex-none items-center justify-center rounded-[0.65rem] text-xs font-bold text-white"
+                        style={{ background: item.cor ?? 'var(--color-tinta-fraca)' }}
+                        aria-hidden
+                      >
+                        {item.titulo.slice(0, 2).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{item.titulo}</span>
+                        <span className="block truncate text-xs text-[var(--color-tinta-suave)]">
+                          {item.subtitulo}
+                        </span>
+                      </span>
+                      <span
+                        className="tabular flex-none text-sm font-semibold"
+                        style={{
+                          color:
+                            item.tipo === 'entrada' ? 'var(--color-positivo)' : 'var(--color-alerta)',
+                        }}
+                      >
+                        {item.tipo === 'saida' ? '− ' : ''}
+                        {formatMoney(item.valor)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -364,22 +486,54 @@ export function AppNav({ admin }: { admin: boolean }) {
               </button>
             </div>
 
-            <div className="mb-1 grid grid-cols-2 gap-2 px-1">
-              {ITENS_MAIS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={fecharMais}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-[var(--radius-cartao)] py-4 text-center"
-                  style={
-                    ativo(item.href)
-                      ? { background: 'var(--color-marca-suave)', color: 'var(--color-marca)' }
-                      : { background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }
-                  }
-                >
-                  <IconeSvg id={item.icone} tamanho={22} />
-                  <span className="text-xs font-medium">{item.rotulo}</span>
-                </Link>
+            <div className="mb-1 space-y-4 overflow-y-auto px-1">
+              {GRUPOS_MAIS.map((grupo) => (
+                <div key={grupo.titulo}>
+                  <h3 className="mb-1.5 px-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-tinta-suave)]">
+                    {grupo.titulo}
+                  </h3>
+                  <div className="space-y-1.5">
+                    {grupo.itens.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={fecharMais}
+                        className="flex items-center gap-3 rounded-[var(--radius-cartao)] p-3"
+                        style={
+                          ativo(item.href)
+                            ? { background: 'var(--color-marca-suave)' }
+                            : { background: 'var(--color-papel-suave)' }
+                        }
+                      >
+                        <span
+                          className="flex h-10 w-10 flex-none items-center justify-center rounded-[0.8rem]"
+                          style={{
+                            background: 'var(--color-papel-elevado)',
+                            color: ativo(item.href) ? 'var(--color-marca)' : 'var(--color-tinta-suave)',
+                          }}
+                        >
+                          <IconeSvg id={item.icone} tamanho={20} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span
+                            className="block text-sm font-semibold"
+                            style={{
+                              color: ativo(item.href) ? 'var(--color-marca)' : 'var(--color-tinta)',
+                            }}
+                          >
+                            {item.rotulo}
+                          </span>
+                          <span className="block truncate text-xs text-[var(--color-tinta-suave)]">
+                            {item.subtitulo}
+                          </span>
+                        </span>
+                        <span aria-hidden className="flex-none text-[var(--color-tinta-suave)]">
+                          →
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
 
