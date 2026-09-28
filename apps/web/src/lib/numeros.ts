@@ -100,6 +100,15 @@ export function dataLocal(instante: Date, timezone: string): string {
   }).format(instante);
 }
 
+/** Formata um número para exibir em mensagens de confirmação (ex.: "18,50"), já pronto para ir numa query string. */
+export function formatarValorParaUrl(valor: number): string {
+  const texto = valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return encodeURIComponent(texto);
+}
+
 /** Valores iniciais de <input type="date"> e <input type="time"> para agora. */
 export function agoraNoFuso(timezone: string): { data: string; hora: string } {
   const agora = new Date();
