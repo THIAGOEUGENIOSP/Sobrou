@@ -11,6 +11,7 @@ import {
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
 import { BotaoAjustes } from '@/components/cabecalho';
+import { Confirmacao } from '@/components/confirmacao';
 import { cancelarTurno, excluirTransacao, pausarTurno, retomarTurno } from '@/lib/turnos/actions';
 import { FormularioIniciarTurno } from './iniciar';
 import { Cronometro } from './cronometro';
@@ -19,7 +20,17 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = { title: 'Turno — Sobrou' };
 
-export default async function TurnoPage() {
+const TEXTO_CONFIRMACAO: Record<string, (valor: string) => string> = {
+  ganho: (v) => `Ganho de R$ ${v} adicionado — já somado ao Faturamento, logo abaixo.`,
+  despesa: (v) => `Despesa de R$ ${v} lançada — já descontada do Resultado estimado, logo abaixo.`,
+};
+
+export default async function TurnoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; valor?: string }>;
+}) {
+  const sp = await searchParams;
   const ctx = await carregarContexto();
   if (!ctx.veiculo) redirect('/onboarding');
 
@@ -133,9 +144,12 @@ export default async function TurnoPage() {
   const custoPorKm = combustivelEstimado !== null ? safeDiv(combustivelEstimado, kmInformado, 2) : null;
 
   const pausado = Boolean(turno.paused_at);
+  const confirmacao = sp.ok && sp.valor ? TEXTO_CONFIRMACAO[sp.ok]?.(sp.valor) : null;
 
   return (
     <>
+      {confirmacao && <Confirmacao fecharHref="/app/turno">{confirmacao}</Confirmacao>}
+
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <span
