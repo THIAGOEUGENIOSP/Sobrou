@@ -900,7 +900,11 @@ export type Database = {
         Row: {
           category_id: string
           created_at: string
+          duracao_min: number | null
           id: string
+          km: number | null
+          nota_passageiro: number | null
+          occurred_at: string
           qtd_corridas: number | null
           shift_id: string
           updated_at: string
@@ -910,7 +914,11 @@ export type Database = {
         Insert: {
           category_id: string
           created_at?: string
+          duracao_min?: number | null
           id?: string
+          km?: number | null
+          nota_passageiro?: number | null
+          occurred_at?: string
           qtd_corridas?: number | null
           shift_id: string
           updated_at?: string
@@ -920,7 +928,11 @@ export type Database = {
         Update: {
           category_id?: string
           created_at?: string
+          duracao_min?: number | null
           id?: string
+          km?: number | null
+          nota_passageiro?: number | null
+          occurred_at?: string
           qtd_corridas?: number | null
           shift_id?: string
           updated_at?: string
@@ -957,7 +969,10 @@ export type Database = {
           notes: string | null
           odo_final: number | null
           odo_inicial: number
+          paused_at: string | null
+          paused_seconds: number
           preco_combustivel_usado: number | null
+          snap_corridas: number | null
           snap_custo_combustivel: number | null
           snap_disponivel: number | null
           snap_faturamento: number | null
@@ -987,7 +1002,10 @@ export type Database = {
           notes?: string | null
           odo_final?: number | null
           odo_inicial: number
+          paused_at?: string | null
+          paused_seconds?: number
           preco_combustivel_usado?: number | null
+          snap_corridas?: number | null
           snap_custo_combustivel?: number | null
           snap_disponivel?: number | null
           snap_faturamento?: number | null
@@ -1017,7 +1035,10 @@ export type Database = {
           notes?: string | null
           odo_final?: number | null
           odo_inicial?: number
+          paused_at?: string | null
+          paused_seconds?: number
           preco_combustivel_usado?: number | null
+          snap_corridas?: number | null
           snap_custo_combustivel?: number | null
           snap_disponivel?: number | null
           snap_faturamento?: number | null
