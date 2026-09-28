@@ -199,7 +199,9 @@ export default async function TurnoPage() {
             ⓘ
           </span>
         </h2>
-        <p className="tabular text-2xl font-bold">{formatMoney(resultadoEstimado)}</p>
+        <p className="tabular text-2xl font-bold" style={{ color: 'var(--color-positivo)' }}>
+          {formatMoney(resultadoEstimado)}
+        </p>
         <p className="mt-1 text-xs text-[var(--color-tinta-suave)]">Após custos e reservas</p>
 
         {combustivelEstimado !== null ? (
@@ -207,11 +209,15 @@ export default async function TurnoPage() {
             <ChipEstimativa
               valor={formatConsumo(parametros.consumo)}
               rotulo="Consumo"
+              corIcone="var(--color-marca)"
+              corFundo="var(--color-marca-suave)"
               icone={<path d="M12 3s6 6.5 6 10.5a6 6 0 1 1-12 0C6 9.5 12 3 12 3Z" />}
             />
             <ChipEstimativa
               valor={formatRate(custoPorKm, 'km')}
               rotulo="Custo por km"
+              corIcone="#60a5fa"
+              corFundo="rgba(96,165,250,0.14)"
               icone={<path d="M4 16l4-8h2l-1.5 5H13l4-8h2l-5 11H12l1-3H9l-1 3H6l-2-3Z" />}
             />
           </div>
@@ -227,15 +233,15 @@ export default async function TurnoPage() {
           <input type="hidden" name="id" value={turno.id} />
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-center font-medium"
+            className="flex h-[52px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 text-center text-sm font-medium"
             style={{ borderColor: 'var(--color-borda)' }}
           >
             {pausado ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="flex-none">
                 <path d="M8 5v14l11-7Z" />
               </svg>
             ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="flex-none">
                 <path d="M7 5h4v14H7zM13 5h4v14h-4z" />
               </svg>
             )}
@@ -244,10 +250,10 @@ export default async function TurnoPage() {
         </form>
         <Link
           href="/app/turno/fechar"
-          className="flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-center font-semibold text-white"
+          className="flex h-[52px] w-full items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 text-center text-sm font-semibold text-white"
           style={{ background: 'var(--color-alerta)' }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden className="flex-none">
             <rect x="6" y="6" width="12" height="12" rx="2" />
           </svg>
           Encerrar turno
@@ -373,19 +379,28 @@ function ChipEstimativa({
   valor,
   rotulo,
   icone,
+  corIcone = 'var(--color-marca)',
+  corFundo = 'var(--color-marca-suave)',
 }: {
   valor: string;
   rotulo: string;
   icone: React.ReactNode;
+  corIcone?: string;
+  corFundo?: string;
 }) {
   return (
     <div
-      className="flex items-center gap-2 rounded-[var(--radius-cartao)] p-3"
+      className="flex items-center gap-2.5 rounded-[var(--radius-cartao)] p-3"
       style={{ background: 'var(--color-papel-elevado)' }}
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-marca)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none" aria-hidden>
-        {icone}
-      </svg>
+      <span
+        className="flex h-8 w-8 flex-none items-center justify-center rounded-full"
+        style={{ background: corFundo }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={corIcone} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          {icone}
+        </svg>
+      </span>
       <span className="min-w-0">
         <span className="tabular block text-sm font-bold">{valor}</span>
         <span className="block text-xs text-[var(--color-tinta-suave)]">{rotulo}</span>
