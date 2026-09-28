@@ -470,3 +470,78 @@ export async function finalizarTurno(
   revalidatePath('/app');
   redirect(`/app/turno/${turno.id}`);
 }
+
+// ---------------------------------------------------------------------------
+// Gerenciar turnos fechados (histórico): excluir um turno já encerrado, ou
+// vários de uma vez por período. Só apaga — editar reabriria a conta do
+// fechamento (km, consumo, percentuais da época), o que arrisca reescrever um
+// dia com números de hoje; excluir e lançar de novo é o caminho seguro.
+//
+// O `delete` de um turno arrasta consigo (via CASCADE no banco) as corridas e
+// as reservas creditadas daquele turno; despesas/receitas avulsas que citavam
+// o turno (`transactions.shift_id`) ficam soltas em vez de somem (SET NULL).
+
+/** Exclui um único turno fechado (seção "Histórico de turnos"). */
+export async function excluirTurnoFechado(formData: FormData): Promise<void> {
+  const id = String(formData.get('id') ?? '').trim();
+  if (!id) return;
+
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  // O filtro por `status = 'fechado'` é de propósito: nunca deixar essa ação
+  // apagar um turno que ainda está em andamento por engano.
+  await supabase.from('shifts').delete().eq('id', id).eq('user_id', user.id).eq('status', 'fechado');
+
+  revalidatePath('/app');
+  revalidatePath('/app/turno/historico');
+  redirect('/app/turno/historico?ok=excluido');
+}
+
+const periodoSchema = z
+  .object({
+    de: z.string().min(1, 'Informe a data inicial.'),
+    ate: z.string().min(1, 'Informe a data final.'),
+  })
+  .refine((d) => d.de <= d.ate, {
+    path: ['ate'],
+    message: 'A data final não pode vir antes da inicial.',
+  });
+
+/** Exclui todos os turnos fechados dentro de um período (inclusive). */
+export async function excluirTurnosPorPeriodo(
+  _estado: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const parsed = periodoSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return erroDeZod(parsed.error);
+
+  const user = await requireUser();
+  const supabase = await createClient();
+
+  const { data: afetados } = await supabase
+    .from('shifts')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('status', 'fechado')
+    .gte('work_date', parsed.data.de)
+    .lte('work_date', parsed.data.ate);
+
+  if (!afetados || afetados.length === 0) {
+    return { erro: 'Nenhum turno fechado nesse período.' };
+  }
+
+  const { error } = await supabase
+    .from('shifts')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('status', 'fechado')
+    .gte('work_date', parsed.data.de)
+    .lte('work_date', parsed.data.ate);
+
+  if (error) return { erro: 'Não foi possível excluir. Tente novamente.' };
+
+  revalidatePath('/app');
+  revalidatePath('/app/turno/historico');
+  redirect(`/app/turno/historico?ok=periodo&qtd=${afetados.length}`);
+}
