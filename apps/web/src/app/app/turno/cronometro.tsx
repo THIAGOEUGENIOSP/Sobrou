@@ -40,11 +40,11 @@ export function Cronometro({
   const texto = segundos === null ? '—' : formatar(segundos);
 
   return (
-    <div>
-      <p className="text-sm font-medium text-[var(--color-tinta-suave)]">
-        {pausedAt ? 'Pausado' : 'Tempo rodando'}
+    <div className="py-2 text-center">
+      <p className="tabular text-5xl font-extrabold tracking-tight">{texto}</p>
+      <p className="mt-1 text-sm font-medium text-[var(--color-tinta-suave)]">
+        {pausedAt ? 'Pausado' : 'Tempo de turno'}
       </p>
-      <p className="tabular mt-0.5 text-3xl font-extrabold">{texto}</p>
     </div>
   );
 }
