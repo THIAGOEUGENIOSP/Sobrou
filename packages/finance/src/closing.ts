@@ -28,6 +28,9 @@ export interface FechamentoDiario {
     reservaVeiculo: number;
     reservaEmergencia: number;
     disponivel: number;
+    /** Total de corridas do turno — null quando nenhuma corrida informou
+     * quantidade (o campo é opcional no lançamento). */
+    qtdCorridas: number | null;
   };
 }
 
@@ -60,6 +63,7 @@ export function fecharTurno(
       reservaVeiculo: distribuicao.reservaVeiculo,
       reservaEmergencia: distribuicao.reservaEmergencia,
       disponivel: distribuicao.disponivel,
+      qtdCorridas: turno.qtdCorridas,
     },
   };
 }
