@@ -12,6 +12,7 @@ import {
 import { carregarContexto, paraFuelEntry } from '@/lib/dados/contexto';
 import { createClient } from '@/lib/supabase/server';
 import { historyFloor } from '@/lib/entitlements';
+import { Confirmacao } from '@/components/confirmacao';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,12 @@ const NOME_COMBUSTIVEL: Record<string, string> = {
   outro: 'Outro',
 };
 
-export default async function AbastecimentosPage() {
+export default async function AbastecimentosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; valor?: string }>;
+}) {
+  const sp = await searchParams;
   const ctx = await carregarContexto();
   const supabase = await createClient();
 
@@ -56,6 +62,12 @@ export default async function AbastecimentosPage() {
           + Novo
         </Link>
       </div>
+
+      {sp.ok && sp.valor && (
+        <Confirmacao fecharHref="/app/abastecimentos">
+          Abastecimento de R$ {sp.valor} registrado — já entra no seu consumo e custo por km abaixo.
+        </Confirmacao>
+      )}
 
       <section className="mb-8 grid grid-cols-2 gap-3">
         <div className="rounded-[var(--radius-cartao)] border border-[var(--color-borda)] bg-[var(--color-papel-suave)] p-4">
