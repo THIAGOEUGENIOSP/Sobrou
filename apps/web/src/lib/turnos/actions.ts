@@ -7,7 +7,7 @@ import { fecharTurno, segundosTrabalhados, type ShiftRevenue } from '@sobrou/fin
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
-import { dataLocal, numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
+import { dataLocal, formatarValorParaUrl, numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
 
 /**
  * Turno: iniciar, lançar despesa no meio e fechar o dia (seções 4, 6, 7 e 12).
@@ -165,7 +165,9 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
   if (error) return { erro: 'Não foi possível registrar o ganho.' };
 
   revalidatePath('/app/turno');
-  redirect('/app/turno');
+  // O `?ok=` leva a tela do turno a mostrar "foi pra aqui" — a confirmação
+  // some sozinha assim que a pessoa navega, porque a URL some com ela.
+  redirect(`/app/turno?ok=ganho&valor=${formatarValorParaUrl(parsed.data.valor)}`);
 }
 
 /** Remove uma corrida lançada por engano — só enquanto o turno está aberto. */
@@ -235,7 +237,11 @@ export async function lancarTransacao(
   revalidatePath('/app');
   revalidatePath('/app/turno');
 
-  redirect(parsed.data.shift_id ? '/app/turno' : '/app');
+  redirect(
+    parsed.data.shift_id
+      ? `/app/turno?ok=despesa&valor=${formatarValorParaUrl(parsed.data.valor)}`
+      : `/app?ok=despesa&valor=${formatarValorParaUrl(parsed.data.valor)}`,
+  );
 }
 
 export async function excluirTransacao(formData: FormData): Promise<void> {
@@ -439,6 +445,7 @@ export async function finalizarTurno(
       reserva_veiculo: fechamento.snapshot.reservaVeiculo,
       reserva_emerg: fechamento.snapshot.reservaEmergencia,
       disponivel: fechamento.snapshot.disponivel,
+      corridas: fechamento.snapshot.qtdCorridas,
     },
     // Vazio de propósito: as linhas já estão em `shift_revenues` desde que
     // foram lançadas em tempo real, e a RPC só apaga+reinsere quando este
