@@ -53,6 +53,7 @@ export function FormularioFecharTurno({
 }) {
   const [estado, acao] = useActionState(finalizarTurno, {});
   const [odoFinal, setOdoFinal] = useState('');
+  const [verDetalhes, setVerDetalhes] = useState(false);
 
   const faturamentoTotal = receitas.reduce((a, r) => a + r.valor, 0);
 
@@ -143,6 +144,11 @@ export function FormularioFecharTurno({
         onChange={(e) => setOdoFinal(e.target.value)}
         erro={estado.campos?.odo_final}
       />
+      {!previa && (
+        <p className="-mt-2 mb-4 text-sm text-[var(--color-tinta-suave)]">
+          Assim que preencher, você já vê quanto sobra hoje — antes de confirmar o fechamento.
+        </p>
+      )}
 
       {previa && (
         <>
@@ -188,37 +194,54 @@ export function FormularioFecharTurno({
             className="mb-6 rounded-[var(--radius-cartao)] p-5"
             style={{ background: 'var(--color-papel-suave)' }}
           >
-            <h2 className="mb-3 font-semibold">Resumo de hoje</h2>
+            <h2 className="mb-3 font-semibold">Pra onde vai esse dinheiro</h2>
             <dl className="space-y-1.5 text-sm">
-              <Linha rotulo="Horas trabalhadas" valor={formatHoras(previa.turno.horas)} />
-              <Linha rotulo="KM rodados" valor={formatKm(previa.turno.km)} />
               <Linha
-                rotulo="Média"
-                valor={`${formatConsumo(consumo)}${origemConsumo === 'medido' ? '' : ' (estimado)'}`}
+                rotulo={`Reserva do carro (${allocation.pctVeiculo}%)`}
+                valor={formatMoney(previa.distribuicao.reservaVeiculo)}
               />
-              <Linha rotulo="Combustível consumido" valor={formatLitros(previa.turno.litros)} />
               <Linha
-                rotulo="Custo combustível/km"
-                valor={formatRate(previa.turno.combustivelPorKm, 'km')}
+                rotulo={`Emergência (${allocation.pctEmergencia}%)`}
+                valor={formatMoney(previa.distribuicao.reservaEmergencia)}
               />
-              <Linha rotulo="Faturamento/km" valor={formatRate(previa.turno.faturamentoPorKm, 'km')} />
-              <Linha
-                rotulo="Faturamento/hora"
-                valor={formatRate(previa.turno.faturamentoPorHora, 'h')}
-              />
-              <Linha rotulo="Outras despesas" valor={formatMoney(previa.turno.outrasDespesas)} />
-
-              <div className="!mt-3 border-t border-[var(--color-borda)] pt-3">
-                <Linha
-                  rotulo={`Reserva do carro (${allocation.pctVeiculo}%)`}
-                  valor={formatMoney(previa.distribuicao.reservaVeiculo)}
-                />
-                <Linha
-                  rotulo={`Emergência (${allocation.pctEmergencia}%)`}
-                  valor={formatMoney(previa.distribuicao.reservaEmergencia)}
-                />
-              </div>
             </dl>
+            <p className="mt-1.5 text-xs text-[var(--color-tinta-suave)]">
+              O resto — {formatMoney(previa.distribuicao.disponivel)} — é o que fica disponível pra
+              você, mostrado ali em cima.
+            </p>
+
+            {!verDetalhes ? (
+              <button
+                type="button"
+                onClick={() => setVerDetalhes(true)}
+                className="mt-4 text-sm font-medium text-[var(--color-marca)]"
+              >
+                + Ver detalhes do turno (horas, km, consumo…)
+              </button>
+            ) : (
+              <dl className="mt-4 space-y-1.5 border-t border-[var(--color-borda)] pt-3 text-sm">
+                <Linha rotulo="Horas trabalhadas" valor={formatHoras(previa.turno.horas)} />
+                <Linha rotulo="KM rodados" valor={formatKm(previa.turno.km)} />
+                <Linha
+                  rotulo="Média"
+                  valor={`${formatConsumo(consumo)}${origemConsumo === 'medido' ? '' : ' (estimado)'}`}
+                />
+                <Linha rotulo="Combustível consumido" valor={formatLitros(previa.turno.litros)} />
+                <Linha
+                  rotulo="Custo combustível/km"
+                  valor={formatRate(previa.turno.combustivelPorKm, 'km')}
+                />
+                <Linha
+                  rotulo="Faturamento/km"
+                  valor={formatRate(previa.turno.faturamentoPorKm, 'km')}
+                />
+                <Linha
+                  rotulo="Faturamento/hora"
+                  valor={formatRate(previa.turno.faturamentoPorHora, 'h')}
+                />
+                <Linha rotulo="Outras despesas" valor={formatMoney(previa.turno.outrasDespesas)} />
+              </dl>
+            )}
           </section>
         </>
       )}
