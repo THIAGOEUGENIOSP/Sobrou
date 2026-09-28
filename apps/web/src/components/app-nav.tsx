@@ -12,7 +12,7 @@ import type { ItemRegistroRapido } from '@/lib/registro-rapido/dados';
 const ITENS_PRINCIPAIS = [
   { href: '/app', rotulo: 'Início', icone: 'casa' },
   { href: '/app/turno', rotulo: 'Turno', icone: 'turno' },
-  { href: '/app/relatorios', rotulo: 'Relatórios', icone: 'relatorios' },
+  { href: '/app/transacoes', rotulo: 'Transações', icone: 'transacoes' },
 ] as const;
 
 /**
@@ -21,9 +21,9 @@ const ITENS_PRINCIPAIS = [
  * apps não decifra ícone sozinho; o nome + a frase dizem exatamente o que
  * ele vai encontrar lá dentro, sem precisar adivinhar ou tocar pra descobrir.
  */
-type IconeMais = 'transacoes' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto';
+type IconeMais = 'relatorios' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto';
 type RotaMais =
-  | '/app/transacoes'
+  | '/app/relatorios'
   | '/app/consultor'
   | '/app/metas'
   | '/app/reservas'
@@ -47,10 +47,10 @@ const GRUPOS_MAIS: GrupoMais[] = [
     titulo: 'Seu dia a dia',
     itens: [
       {
-        href: '/app/transacoes',
-        rotulo: 'Transações',
-        subtitulo: 'Tudo que você ganhou e gastou',
-        icone: 'transacoes',
+        href: '/app/relatorios',
+        rotulo: 'Relatórios',
+        subtitulo: 'Evolução, comparação com o período anterior',
+        icone: 'relatorios',
       },
       {
         href: '/app/consultor',
