@@ -6,7 +6,13 @@ import { z } from 'zod';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
-import { montarInstante, numeroComZero, numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
+import {
+  formatarValorParaUrl,
+  montarInstante,
+  numeroComZero,
+  numeroObrigatorio,
+  numeroOpcional,
+} from '@/lib/numeros';
 
 /**
  * Abastecimentos (seção 3).
@@ -93,7 +99,11 @@ export async function salvarAbastecimento(
 
   revalidatePath('/app');
   revalidatePath('/app/abastecimentos');
-  redirect('/app/abastecimentos');
+  redirect(
+    id
+      ? '/app/abastecimentos'
+      : `/app/abastecimentos?ok=1&valor=${formatarValorParaUrl(linha.valor_pago)}`,
+  );
 }
 
 export async function excluirAbastecimento(formData: FormData): Promise<void> {
