@@ -21,15 +21,7 @@ const ITENS_PRINCIPAIS = [
  * apps não decifra ícone sozinho; o nome + a frase dizem exatamente o que
  * ele vai encontrar lá dentro, sem precisar adivinhar ou tocar pra descobrir.
  */
-type IconeMais =
-  | 'relatorios'
-  | 'consultor'
-  | 'metas'
-  | 'reservas'
-  | 'mensal'
-  | 'posto'
-  | 'historico'
-  | 'valeapena';
+type IconeMais = 'relatorios' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto' | 'historico';
 type RotaMais =
   | '/app/relatorios'
   | '/app/consultor'
@@ -37,8 +29,7 @@ type RotaMais =
   | '/app/reservas'
   | '/app/mensal'
   | '/app/abastecimentos'
-  | '/app/turno/historico'
-  | '/app/corrida';
+  | '/app/turno/historico';
 
 interface ItemMais {
   href: RotaMais;
@@ -73,12 +64,6 @@ const GRUPOS_MAIS: GrupoMais[] = [
         rotulo: 'Histórico de turnos',
         subtitulo: 'Ver ou excluir turnos já fechados',
         icone: 'historico',
-      },
-      {
-        href: '/app/corrida',
-        rotulo: 'Vale a pena?',
-        subtitulo: 'Avalie uma corrida antes de aceitar',
-        icone: 'valeapena',
       },
     ],
   },
@@ -191,12 +176,6 @@ const ICONES: Record<Icone, React.ReactNode> = {
       <circle cx="12" cy="12" r="8.5" />
       <path d="M12 7.5V12l3 2" />
       <path d="M6 6 4 4M4 4v3M4 4h3" />
-    </>
-  ),
-  valeapena: (
-    <>
-      <path d="M9 12.5 11 15l4-5" />
-      <circle cx="12" cy="12" r="8.5" />
     </>
   ),
   transacoes: (
