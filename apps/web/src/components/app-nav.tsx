@@ -21,14 +21,15 @@ const ITENS_PRINCIPAIS = [
  * apps não decifra ícone sozinho; o nome + a frase dizem exatamente o que
  * ele vai encontrar lá dentro, sem precisar adivinhar ou tocar pra descobrir.
  */
-type IconeMais = 'relatorios' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto';
+type IconeMais = 'relatorios' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto' | 'historico';
 type RotaMais =
   | '/app/relatorios'
   | '/app/consultor'
   | '/app/metas'
   | '/app/reservas'
   | '/app/mensal'
-  | '/app/abastecimentos';
+  | '/app/abastecimentos'
+  | '/app/turno/historico';
 
 interface ItemMais {
   href: RotaMais;
@@ -57,6 +58,12 @@ const GRUPOS_MAIS: GrupoMais[] = [
         rotulo: 'Consultor',
         subtitulo: 'Dicas sobre o seu desempenho',
         icone: 'consultor',
+      },
+      {
+        href: '/app/turno/historico',
+        rotulo: 'Histórico de turnos',
+        subtitulo: 'Ver ou excluir turnos já fechados',
+        icone: 'historico',
       },
     ],
   },
@@ -164,6 +171,13 @@ const ICONES: Record<Icone, React.ReactNode> = {
     </>
   ),
   relatorios: <path d="M4 19V10M10 19V5M16 19v-7M3 19h18" />,
+  historico: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+      <path d="M6 6 4 4M4 4v3M4 4h3" />
+    </>
+  ),
   transacoes: (
     <>
       <rect x="5" y="3" width="14" height="18" rx="2" />
