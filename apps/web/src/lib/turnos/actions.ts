@@ -54,6 +54,62 @@ export async function iniciarTurno(_estado: FormState, formData: FormData): Prom
   redirect('/app/turno');
 }
 
+/**
+ * Abre um turno sem perguntar nada, pro motorista que esqueceu de apertar
+ * "Começar a rodar" e só lembrou na hora de lançar a corrida — usa o último
+ * hodômetro conhecido, do mesmo jeito que a tela "Iniciar turno" já sugere.
+ * Só funciona quando esse valor existe; sem ele não tem hodômetro seguro pra
+ * abrir turno sozinho, e a tela de "Adicionar ganho" cai de volta pro fluxo
+ * manual. Devolve o id do turno (criado agora, ou já aberto) ou `null`.
+ */
+export async function abrirTurnoAutomatico(): Promise<{ id: string; iniciadoAgora: boolean } | null> {
+  const user = await requireUser();
+  const supabase = await createClient();
+  const ctx = await carregarContexto();
+
+  const { data: aberto } = await supabase
+    .from('shifts')
+    .select('id')
+    .eq('status', 'aberto')
+    .maybeSingle();
+  if (aberto) return { id: aberto.id, iniciadoAgora: false };
+
+  if (!ctx.veiculo || ctx.veiculo.odometro_atual === null || ctx.veiculo.odometro_atual === undefined) {
+    return null;
+  }
+
+  const agora = new Date();
+  const { data: novo, error } = await supabase
+    .from('shifts')
+    .insert({
+      user_id: user.id,
+      vehicle_id: ctx.veiculo.id,
+      status: 'aberto',
+      work_date: dataLocal(agora, ctx.timezone),
+      started_at: agora.toISOString(),
+      odo_inicial: ctx.veiculo.odometro_atual,
+    })
+    .select('id')
+    .maybeSingle();
+
+  // Corrida com outra aba/toque duplo: alguém já abriu um turno entre a
+  // checagem acima e este insert. Não é erro — é só usar o que já existe.
+  if (error?.code === '23505') {
+    const { data: jaAberto } = await supabase
+      .from('shifts')
+      .select('id')
+      .eq('status', 'aberto')
+      .maybeSingle();
+    return jaAberto ? { id: jaAberto.id, iniciadoAgora: false } : null;
+  }
+  if (error || !novo) return null;
+
+  await supabase.from('app_events').insert({ user_id: user.id, event_key: 'turno_iniciado' });
+  revalidatePath('/app');
+  revalidatePath('/app/turno');
+  return { id: novo.id, iniciadoAgora: true };
+}
+
 export async function cancelarTurno(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '').trim();
   if (!id) return;
