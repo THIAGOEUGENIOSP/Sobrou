@@ -44,6 +44,8 @@ export default async function DetalheCorridaPage({
 
   const km = corrida.km !== null ? Number(corrida.km) : null;
   const valorPorKm = km !== null ? safeDiv(Number(corrida.valor), km, 2) : null;
+  const horas = corrida.duracao_min !== null ? Number(corrida.duracao_min) / 60 : null;
+  const valorPorHora = horas !== null ? safeDiv(Number(corrida.valor), horas, 2) : null;
   const horario = new Date(corrida.occurred_at).toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -91,6 +93,7 @@ export default async function DetalheCorridaPage({
           <Linha rotulo="Tempo" valor={`${Number(corrida.duracao_min)} min`} />
         )}
         {valorPorKm !== null && <Linha rotulo="Valor por km" valor={formatMoney(valorPorKm)} />}
+        {valorPorHora !== null && <Linha rotulo="Valor por hora" valor={formatMoney(valorPorHora)} />}
         <Linha rotulo="Horário" valor={horario} />
         {corrida.nota_passageiro !== null && (
           <Linha rotulo="Avaliação do passageiro" valor={`★ ${Number(corrida.nota_passageiro).toFixed(2)}`} />
