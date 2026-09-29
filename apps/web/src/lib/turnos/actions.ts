@@ -86,66 +86,6 @@ export async function turnoAbertoAgora(): Promise<string | null> {
   return aberto?.id ?? null;
 }
 
-/**
- * Abre um turno com um toque só, pro motorista que esqueceu de apertar
- * "Começar a rodar" e só lembrou na hora de lançar a corrida — usa o último
- * hodômetro conhecido, do mesmo jeito que a tela "Iniciar turno" já sugere.
- *
- * É uma Server Action de verdade (só é chamada a partir de um `<form
- * action={...}>`, nunca direto do render de uma página) — `revalidatePath`
- * só pode rodar dentro de uma action, chamá-lo durante o render de uma
- * Server Component derruba a rota com "used revalidatePath during render
- * which is unsupported".
- */
-export async function abrirTurnoEIrParaGanho(): Promise<void> {
-  const user = await requireUser();
-  const supabase = await createClient();
-  const ctx = await carregarContexto();
-
-  const { data: aberto } = await supabase
-    .from('shifts')
-    .select('id')
-    .eq('status', 'aberto')
-    .maybeSingle();
-  if (aberto) {
-    redirect('/app/turno/ganho');
-  }
-
-  if (!ctx.veiculo || ctx.veiculo.odometro_atual === null || ctx.veiculo.odometro_atual === undefined) {
-    redirect('/app/turno');
-  }
-
-  const agora = new Date();
-  const { data: novo, error } = await supabase
-    .from('shifts')
-    .insert({
-      user_id: user.id,
-      vehicle_id: ctx.veiculo.id,
-      status: 'aberto',
-      work_date: dataLocal(agora, ctx.timezone),
-      started_at: agora.toISOString(),
-      odo_inicial: ctx.veiculo.odometro_atual,
-    })
-    .select('id')
-    .maybeSingle();
-
-  // Corrida com outra aba/toque duplo: alguém já abriu um turno entre a
-  // checagem acima e este insert. Não é erro — é só usar o que já existe.
-  if (error?.code === '23505') {
-    revalidatePath('/app');
-    revalidatePath('/app/turno');
-    redirect('/app/turno/ganho');
-  }
-  if (error || !novo) {
-    redirect('/app/turno');
-  }
-
-  await supabase.from('app_events').insert({ user_id: user.id, event_key: 'turno_iniciado' });
-  revalidatePath('/app');
-  revalidatePath('/app/turno');
-  redirect('/app/turno/ganho?iniciado=1');
-}
-
 export async function cancelarTurno(formData: FormData): Promise<void> {
   const id = String(formData.get('id') ?? '').trim();
   if (!id) return;
@@ -207,7 +147,9 @@ export async function retomarTurno(formData: FormData): Promise<void> {
 // ---------------------------------------------------------------------------
 
 const ganhoSchema = z.object({
-  shift_id: z.string().uuid(),
+  // Vazio quando a tela abriu sem turno em andamento — aí este envio mesmo
+  // é que abre um, não uma tela separada antes.
+  shift_id: z.string().uuid().optional().or(z.literal('')),
   category_id: z.string().uuid('Escolha a plataforma.'),
   data: z.string().min(1, 'Informe a data.'),
   valor: numeroObrigatorio('Informe o valor.'),
@@ -219,12 +161,17 @@ const ganhoSchema = z.object({
 });
 
 /**
- * Registra uma corrida em tempo real, dentro do turno aberto (seção 6/mockup:
- * fluxo "Adicionar ganho"). Cada toque grava uma linha em `shift_revenues` —
- * é essa mesma tabela que, no fechamento, já vem pronta em vez de reperguntar
- * o faturamento do dia, e é ela que sustenta a tela de "Detalhes da corrida".
+ * Registra uma corrida em tempo real (seção 6/mockup: fluxo "Adicionar
+ * ganho"). Cada toque grava uma linha em `shift_revenues` — é essa mesma
+ * tabela que, no fechamento, já vem pronta em vez de reperguntar o
+ * faturamento do dia, e é ela que sustenta a tela de "Detalhes da corrida".
  * Km, duração e nota do passageiro são opcionais: só aparecem depois se o
  * motorista de fato informar — nunca são inventados.
+ *
+ * Sem turno em andamento (`shift_id` vazio), abre um agora — com o último
+ * hodômetro conhecido — no mesmo envio, em vez de mandar pra uma tela
+ * separada antes: não tem por que a pessoa dar dois toques pra lançar uma
+ * corrida só porque esqueceu de "Começar a rodar".
  */
 export async function adicionarGanho(_estado: FormState, formData: FormData): Promise<FormState> {
   const parsed = ganhoSchema.safeParse(Object.fromEntries(formData));
@@ -234,15 +181,63 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
   const supabase = await createClient();
   const ctx = await carregarContexto();
 
-  const { data: turno } = await supabase
-    .from('shifts')
-    .select('id, status')
-    .eq('id', parsed.data.shift_id)
-    .maybeSingle();
+  let shiftId = parsed.data.shift_id || null;
 
-  if (!turno || turno.status !== 'aberto') {
-    return { erro: 'Este turno não está mais aberto.' };
+  if (shiftId) {
+    const { data: turno } = await supabase
+      .from('shifts')
+      .select('id, status')
+      .eq('id', shiftId)
+      .maybeSingle();
+    if (!turno || turno.status !== 'aberto') shiftId = null;
   }
+
+  if (!shiftId) {
+    const { data: aberto } = await supabase
+      .from('shifts')
+      .select('id')
+      .eq('status', 'aberto')
+      .maybeSingle();
+
+    if (aberto) {
+      shiftId = aberto.id;
+    } else {
+      if (!ctx.veiculo || ctx.veiculo.odometro_atual === null || ctx.veiculo.odometro_atual === undefined) {
+        return {
+          erro: 'Cadastre o hodômetro atual do veículo em Ajustes antes de lançar uma corrida.',
+        };
+      }
+      const agoraAbertura = new Date();
+      const { data: novo, error: erroAbrir } = await supabase
+        .from('shifts')
+        .insert({
+          user_id: user.id,
+          vehicle_id: ctx.veiculo.id,
+          status: 'aberto',
+          work_date: dataLocal(agoraAbertura, ctx.timezone),
+          started_at: agoraAbertura.toISOString(),
+          odo_inicial: ctx.veiculo.odometro_atual,
+        })
+        .select('id')
+        .maybeSingle();
+
+      if (erroAbrir?.code === '23505') {
+        const { data: jaAberto } = await supabase
+          .from('shifts')
+          .select('id')
+          .eq('status', 'aberto')
+          .maybeSingle();
+        shiftId = jaAberto?.id ?? null;
+      } else if (erroAbrir || !novo) {
+        return { erro: 'Não foi possível iniciar o turno. Tente novamente.' };
+      } else {
+        shiftId = novo.id;
+        await supabase.from('app_events').insert({ user_id: user.id, event_key: 'turno_iniciado' });
+      }
+    }
+  }
+
+  if (!shiftId) return { erro: 'Não foi possível iniciar o turno. Tente novamente.' };
 
   // A data é editável (pra quem lembra de lançar depois), mas a hora não —
   // se for hoje, usa o instante exato de agora; se for outro dia, usa meio-dia
@@ -256,7 +251,7 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
 
   const { error } = await supabase.from('shift_revenues').insert({
     user_id: user.id,
-    shift_id: parsed.data.shift_id,
+    shift_id: shiftId,
     category_id: parsed.data.category_id,
     valor: parsed.data.valor,
     qtd_corridas:
@@ -270,6 +265,7 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
 
   if (error) return { erro: 'Não foi possível registrar o ganho.' };
 
+  revalidatePath('/app');
   revalidatePath('/app/turno');
   // O `?ok=` leva a tela do turno a mostrar "foi pra aqui" — a confirmação
   // some sozinha assim que a pessoa navega, porque a URL some com ela.
