@@ -32,7 +32,9 @@ export function FormularioGanho({
   hoje,
   plataformas,
 }: {
-  shiftId: string;
+  /** `null` quando ainda não tem turno em andamento — o próprio envio abre
+   * um (ver `adicionarGanho`), não é preciso ter o id antes. */
+  shiftId: string | null;
   hoje: string;
   plataformas: Plataforma[];
 }) {
@@ -58,7 +60,7 @@ export function FormularioGanho({
 
   return (
     <form action={acao} noValidate>
-      <input type="hidden" name="shift_id" value={shiftId} />
+      <input type="hidden" name="shift_id" value={shiftId ?? ''} />
       <input type="hidden" name="category_id" value={escolhida} />
 
       {estado.erro && <Aviso tipo="erro">{estado.erro}</Aviso>}
