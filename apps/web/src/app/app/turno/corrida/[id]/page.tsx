@@ -116,16 +116,25 @@ export default async function DetalheCorridaPage({
       )}
 
       {podeExcluir && (
-        <form action={excluirGanho} className="mt-8">
-          <input type="hidden" name="id" value={corrida.id} />
-          <button
-            type="submit"
-            className="w-full py-3 text-center text-sm"
-            style={{ color: 'var(--color-alerta)' }}
+        <div className="mt-8 flex flex-col gap-1">
+          <Link
+            href={`/app/turno/corrida/${corrida.id}/editar`}
+            className="w-full py-3 text-center text-sm font-medium"
+            style={{ color: 'var(--color-marca)' }}
           >
-            Remover esta corrida
-          </button>
-        </form>
+            Editar corrida
+          </Link>
+          <form action={excluirGanho}>
+            <input type="hidden" name="id" value={corrida.id} />
+            <button
+              type="submit"
+              className="w-full py-3 text-center text-sm"
+              style={{ color: 'var(--color-alerta)' }}
+            >
+              Remover esta corrida
+            </button>
+          </form>
+        </div>
       )}
     </>
   );
