@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { FormularioEdicaoGanho } from './formulario';
 
@@ -41,16 +41,23 @@ export default async function EditarCorridaPage({
       .order('sort_order'),
   ]);
 
-  // Só dá pra editar enquanto o turno está aberto — turno fechado já tem
-  // snapshot calculado, editar depois reescreveria um dia encerrado.
-  if (turno?.status !== 'aberto') redirect(`/app/turno/corrida/${corrida.id}`);
-
   return (
     <>
       <Link href={`/app/turno/corrida/${corrida.id}`} className="text-sm text-[var(--color-marca)]">
         ← Detalhes da corrida
       </Link>
       <h1 className="mt-4 mb-6 text-xl font-bold">Editar corrida</h1>
+
+      {turno?.status !== 'aberto' && (
+        <p
+          className="mb-6 rounded-[var(--radius-cartao)] p-3 text-sm"
+          style={{ background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }}
+        >
+          O turno desse dia já foi fechado. Dá pra corrigir o lançamento normalmente, mas o resumo
+          já calculado daquele turno não se atualiza sozinho — só o valor aqui na lista de
+          Transações.
+        </p>
+      )}
 
       <FormularioEdicaoGanho
         corridaId={corrida.id}
