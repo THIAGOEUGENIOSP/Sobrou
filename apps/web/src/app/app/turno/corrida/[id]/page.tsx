@@ -41,6 +41,11 @@ export default async function DetalheCorridaPage({
   ]);
 
   const podeExcluir = turno?.status === 'aberto';
+  // Editar não tem essa trava: igual `atualizarTransacao`, dá pra corrigir um
+  // lançamento mesmo depois que o turno dele já fechou — bem mais comum, já
+  // que a maioria das revisões acontece depois, olhando o dia inteiro em
+  // Transações, não durante o turno ainda aberto.
+  const podeEditar = true;
 
   const km = corrida.km !== null ? Number(corrida.km) : null;
   const valorPorKm = km !== null ? safeDiv(Number(corrida.valor), km, 2) : null;
@@ -115,25 +120,29 @@ export default async function DetalheCorridaPage({
         </p>
       )}
 
-      {podeExcluir && (
+      {(podeEditar || podeExcluir) && (
         <div className="mt-8 flex flex-col gap-1">
-          <Link
-            href={`/app/turno/corrida/${corrida.id}/editar`}
-            className="w-full py-3 text-center text-sm font-medium"
-            style={{ color: 'var(--color-marca)' }}
-          >
-            Editar corrida
-          </Link>
-          <form action={excluirGanho}>
-            <input type="hidden" name="id" value={corrida.id} />
-            <button
-              type="submit"
-              className="w-full py-3 text-center text-sm"
-              style={{ color: 'var(--color-alerta)' }}
+          {podeEditar && (
+            <Link
+              href={`/app/turno/corrida/${corrida.id}/editar`}
+              className="w-full py-3 text-center text-sm font-medium"
+              style={{ color: 'var(--color-marca)' }}
             >
-              Remover esta corrida
-            </button>
-          </form>
+              Editar corrida
+            </Link>
+          )}
+          {podeExcluir && (
+            <form action={excluirGanho}>
+              <input type="hidden" name="id" value={corrida.id} />
+              <button
+                type="submit"
+                className="w-full py-3 text-center text-sm"
+                style={{ color: 'var(--color-alerta)' }}
+              >
+                Remover esta corrida
+              </button>
+            </form>
+          )}
         </div>
       )}
     </>
