@@ -904,6 +904,7 @@ export type Database = {
           id: string
           km: number | null
           nota_passageiro: number | null
+          notes: string | null
           occurred_at: string
           qtd_corridas: number | null
           shift_id: string
@@ -918,6 +919,7 @@ export type Database = {
           id?: string
           km?: number | null
           nota_passageiro?: number | null
+          notes?: string | null
           occurred_at?: string
           qtd_corridas?: number | null
           shift_id: string
@@ -932,6 +934,7 @@ export type Database = {
           id?: string
           km?: number | null
           nota_passageiro?: number | null
+          notes?: string | null
           occurred_at?: string
           qtd_corridas?: number | null
           shift_id?: string
