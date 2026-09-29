@@ -1,8 +1,15 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useMemo, useState } from 'react';
+import { formatRate } from '@sobrou/finance';
 import { adicionarGanho } from '@/lib/turnos/actions';
+import { lerNumeroBR } from '@/lib/numeros';
 import { Aviso, BotaoEnviar, Campo, CampoMoeda } from '@/components/formulario';
+
+function diaDaSemanaHoje(): string {
+  const texto = new Date().toLocaleDateString('pt-BR', { weekday: 'long' });
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
 
 type Plataforma = { id: string; name: string; favorita: boolean };
 
@@ -27,6 +34,21 @@ export function FormularioGanho({
   const demais = plataformas.filter((p) => !p.favorita);
   const [escolhida, setEscolhida] = useState(favoritas[0]?.id ?? plataformas[0]?.id ?? '');
   const [maisDetalhes, setMaisDetalhes] = useState(false);
+  const [valor, setValor] = useState<number | null>(null);
+  const [km, setKm] = useState('');
+  const [duracaoMin, setDuracaoMin] = useState('');
+
+  // Prévia ao vivo: só aparece quando dá pra calcular de verdade (valor e o
+  // campo em questão preenchidos). É a mesma conta que "Detalhes da corrida"
+  // mostra depois — aqui só adianta pro motorista ver antes de salvar.
+  const rsKm = useMemo(() => {
+    const k = lerNumeroBR(km);
+    return valor !== null && Number.isFinite(k) && k > 0 ? valor / k : null;
+  }, [valor, km]);
+  const rsHora = useMemo(() => {
+    const min = lerNumeroBR(duracaoMin);
+    return valor !== null && Number.isFinite(min) && min > 0 ? valor / (min / 60) : null;
+  }, [valor, duracaoMin]);
 
   return (
     <form action={acao} noValidate>
@@ -34,6 +56,8 @@ export function FormularioGanho({
       <input type="hidden" name="category_id" value={escolhida} />
 
       {estado.erro && <Aviso tipo="erro">{estado.erro}</Aviso>}
+
+      <p className="-mt-1 mb-4 text-sm text-[var(--color-tinta-suave)]">{diaDaSemanaHoje()}</p>
 
       {favoritas.length > 0 && (
         <fieldset className="mb-4">
@@ -82,7 +106,14 @@ export function FormularioGanho({
         <p className="mb-3 text-sm text-[var(--color-alerta)]">{estado.campos.category_id}</p>
       )}
 
-      <CampoMoeda label="Valor da corrida" name="valor" required autoFocus erro={estado.campos?.valor} />
+      <CampoMoeda
+        label="Valor da corrida"
+        name="valor"
+        required
+        autoFocus
+        erro={estado.campos?.valor}
+        onValorChange={setValor}
+      />
       <Campo
         label="Quantas corridas (opcional)"
         name="qtd_corridas"
@@ -106,20 +137,26 @@ export function FormularioGanho({
       ) : (
         <fieldset className="mb-2">
           <legend className="mb-2 text-sm font-medium">Mais detalhes (opcional)</legend>
-          <Campo
-            label="Km da corrida"
-            name="km"
-            inputMode="decimal"
-            placeholder="8,4"
-            erro={estado.campos?.km}
-          />
-          <Campo
-            label="Duração (minutos)"
-            name="duracao_min"
-            inputMode="numeric"
-            placeholder="22"
-            erro={estado.campos?.duracao_min}
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Campo
+              label="Km rodados"
+              name="km"
+              inputMode="decimal"
+              placeholder="8,4"
+              value={km}
+              onChange={(e) => setKm(e.target.value)}
+              erro={estado.campos?.km}
+            />
+            <Campo
+              label="Duração (min)"
+              name="duracao_min"
+              inputMode="numeric"
+              placeholder="22"
+              value={duracaoMin}
+              onChange={(e) => setDuracaoMin(e.target.value)}
+              erro={estado.campos?.duracao_min}
+            />
+          </div>
           <Campo
             label="Nota do passageiro"
             name="nota_passageiro"
@@ -127,6 +164,26 @@ export function FormularioGanho({
             placeholder="5"
             erro={estado.campos?.nota_passageiro}
           />
+
+          {(rsKm !== null || rsHora !== null) && (
+            <div
+              className="mb-4 flex gap-4 rounded-[var(--radius-cartao)] p-3 text-sm"
+              style={{ background: 'var(--color-papel-suave)' }}
+            >
+              {rsKm !== null && (
+                <span>
+                  <span className="block text-xs text-[var(--color-tinta-suave)]">R$ por km</span>
+                  <strong className="tabular">{formatRate(rsKm, 'km')}</strong>
+                </span>
+              )}
+              {rsHora !== null && (
+                <span>
+                  <span className="block text-xs text-[var(--color-tinta-suave)]">R$ por hora</span>
+                  <strong className="tabular">{formatRate(rsHora, 'h')}</strong>
+                </span>
+              )}
+            </div>
+          )}
         </fieldset>
       )}
 
