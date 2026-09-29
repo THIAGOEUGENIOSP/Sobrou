@@ -297,21 +297,16 @@ export async function atualizarGanho(_estado: FormState, formData: FormData): Pr
   if (!parsed.success) return erroDeZod(parsed.error);
 
   const supabase = await createClient();
+  // Sem trava de "turno aberto" aqui — igual `atualizarTransacao`: a maioria
+  // das correções acontece depois, olhando Transações com o turno já
+  // fechado. O resumo do turno (snapshot calculado no fechamento) não se
+  // atualiza sozinho a partir daqui; a tela de edição avisa disso.
   const { data: linha } = await supabase
     .from('shift_revenues')
     .select('shift_id')
     .eq('id', parsed.data.id)
     .maybeSingle();
   if (!linha) return { erro: 'Corrida não encontrada.' };
-
-  const { data: turno } = await supabase
-    .from('shifts')
-    .select('status')
-    .eq('id', linha.shift_id)
-    .maybeSingle();
-  if (turno?.status !== 'aberto') {
-    return { erro: 'Este turno não está mais aberto.' };
-  }
 
   const { error } = await supabase
     .from('shift_revenues')
