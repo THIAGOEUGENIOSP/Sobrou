@@ -7,7 +7,24 @@ import { fecharTurno, segundosTrabalhados, type ShiftRevenue } from '@sobrou/fin
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
-import { dataLocal, formatarValorParaUrl, numeroObrigatorio, numeroOpcional } from '@/lib/numeros';
+import {
+  dataLocal,
+  formatarValorParaUrl,
+  montarInstante,
+  numeroObrigatorio,
+  numeroOpcional,
+} from '@/lib/numeros';
+
+/** "6:30" ou "06:30" viram 390 minutos. Devolve `null` quando não dá. */
+function minutosDeHoras(hhmm: string | undefined | null): number | null {
+  if (!hhmm) return null;
+  const m = hhmm.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const horas = Number(m[1]);
+  const minutos = Number(m[2]);
+  if (!Number.isFinite(horas) || !Number.isFinite(minutos)) return null;
+  return horas * 60 + minutos;
+}
 
 /**
  * Turno: iniciar, lançar despesa no meio e fechar o dia (seções 4, 6, 7 e 12).
@@ -173,11 +190,13 @@ export async function retomarTurno(formData: FormData): Promise<void> {
 const ganhoSchema = z.object({
   shift_id: z.string().uuid(),
   category_id: z.string().uuid('Escolha a plataforma.'),
+  data: z.string().min(1, 'Informe a data.'),
   valor: numeroObrigatorio('Informe o valor.'),
   qtd_corridas: numeroOpcional('Quantidade de corridas inválida.'),
   km: numeroOpcional('KM inválido.'),
-  duracao_min: numeroOpcional('Duração inválida.'),
+  horas_trabalhadas: z.string().optional(),
   nota_passageiro: numeroOpcional('Nota inválida.', { min: 0 }),
+  notes: z.string().trim().max(240).optional(),
 });
 
 /**
@@ -194,6 +213,7 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
 
   const user = await requireUser();
   const supabase = await createClient();
+  const ctx = await carregarContexto();
 
   const { data: turno } = await supabase
     .from('shifts')
@@ -205,6 +225,16 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
     return { erro: 'Este turno não está mais aberto.' };
   }
 
+  // A data é editável (pra quem lembra de lançar depois), mas a hora não —
+  // se for hoje, usa o instante exato de agora; se for outro dia, usa meio-dia
+  // desse dia, já que não tem campo de hora nesta tela.
+  const agora = new Date();
+  const hoje = dataLocal(agora, ctx.timezone);
+  const occurredAt =
+    parsed.data.data === hoje
+      ? agora.toISOString()
+      : montarInstante(parsed.data.data, '12:00', ctx.timezone).toISOString();
+
   const { error } = await supabase.from('shift_revenues').insert({
     user_id: user.id,
     shift_id: parsed.data.shift_id,
@@ -213,9 +243,10 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
     qtd_corridas:
       parsed.data.qtd_corridas !== null ? Math.round(parsed.data.qtd_corridas) : null,
     km: parsed.data.km,
-    duracao_min: parsed.data.duracao_min,
+    duracao_min: minutosDeHoras(parsed.data.horas_trabalhadas),
     nota_passageiro: parsed.data.nota_passageiro,
-    occurred_at: new Date().toISOString(),
+    notes: parsed.data.notes || null,
+    occurred_at: occurredAt,
   });
 
   if (error) return { erro: 'Não foi possível registrar o ganho.' };
