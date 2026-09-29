@@ -72,14 +72,32 @@ export async function iniciarTurno(_estado: FormState, formData: FormData): Prom
 }
 
 /**
- * Abre um turno sem perguntar nada, pro motorista que esqueceu de apertar
+ * Só leitura — pode ser chamada direto do corpo de uma Server Component
+ * durante o render, porque não grava nada nem chama `revalidatePath`.
+ * Devolve o id do turno aberto, se houver.
+ */
+export async function turnoAbertoAgora(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: aberto } = await supabase
+    .from('shifts')
+    .select('id')
+    .eq('status', 'aberto')
+    .maybeSingle();
+  return aberto?.id ?? null;
+}
+
+/**
+ * Abre um turno com um toque só, pro motorista que esqueceu de apertar
  * "Começar a rodar" e só lembrou na hora de lançar a corrida — usa o último
  * hodômetro conhecido, do mesmo jeito que a tela "Iniciar turno" já sugere.
- * Só funciona quando esse valor existe; sem ele não tem hodômetro seguro pra
- * abrir turno sozinho, e a tela de "Adicionar ganho" cai de volta pro fluxo
- * manual. Devolve o id do turno (criado agora, ou já aberto) ou `null`.
+ *
+ * É uma Server Action de verdade (só é chamada a partir de um `<form
+ * action={...}>`, nunca direto do render de uma página) — `revalidatePath`
+ * só pode rodar dentro de uma action, chamá-lo durante o render de uma
+ * Server Component derruba a rota com "used revalidatePath during render
+ * which is unsupported".
  */
-export async function abrirTurnoAutomatico(): Promise<{ id: string; iniciadoAgora: boolean } | null> {
+export async function abrirTurnoEIrParaGanho(): Promise<void> {
   const user = await requireUser();
   const supabase = await createClient();
   const ctx = await carregarContexto();
@@ -89,10 +107,12 @@ export async function abrirTurnoAutomatico(): Promise<{ id: string; iniciadoAgor
     .select('id')
     .eq('status', 'aberto')
     .maybeSingle();
-  if (aberto) return { id: aberto.id, iniciadoAgora: false };
+  if (aberto) {
+    redirect('/app/turno/ganho');
+  }
 
   if (!ctx.veiculo || ctx.veiculo.odometro_atual === null || ctx.veiculo.odometro_atual === undefined) {
-    return null;
+    redirect('/app/turno');
   }
 
   const agora = new Date();
@@ -112,19 +132,18 @@ export async function abrirTurnoAutomatico(): Promise<{ id: string; iniciadoAgor
   // Corrida com outra aba/toque duplo: alguém já abriu um turno entre a
   // checagem acima e este insert. Não é erro — é só usar o que já existe.
   if (error?.code === '23505') {
-    const { data: jaAberto } = await supabase
-      .from('shifts')
-      .select('id')
-      .eq('status', 'aberto')
-      .maybeSingle();
-    return jaAberto ? { id: jaAberto.id, iniciadoAgora: false } : null;
+    revalidatePath('/app');
+    revalidatePath('/app/turno');
+    redirect('/app/turno/ganho');
   }
-  if (error || !novo) return null;
+  if (error || !novo) {
+    redirect('/app/turno');
+  }
 
   await supabase.from('app_events').insert({ user_id: user.id, event_key: 'turno_iniciado' });
   revalidatePath('/app');
   revalidatePath('/app/turno');
-  return { id: novo.id, iniciadoAgora: true };
+  redirect('/app/turno/ganho?iniciado=1');
 }
 
 export async function cancelarTurno(formData: FormData): Promise<void> {
@@ -255,6 +274,64 @@ export async function adicionarGanho(_estado: FormState, formData: FormData): Pr
   // O `?ok=` leva a tela do turno a mostrar "foi pra aqui" — a confirmação
   // some sozinha assim que a pessoa navega, porque a URL some com ela.
   redirect(`/app/turno?ok=ganho&valor=${formatarValorParaUrl(parsed.data.valor)}`);
+}
+
+const edicaoGanhoSchema = z.object({
+  id: z.string().uuid(),
+  category_id: z.string().uuid('Escolha a plataforma.'),
+  valor: numeroObrigatorio('Informe o valor.'),
+  qtd_corridas: numeroOpcional('Quantidade de corridas inválida.'),
+  km: numeroOpcional('KM inválido.'),
+  horas_trabalhadas: z.string().optional(),
+  nota_passageiro: numeroOpcional('Nota inválida.', { min: 0 }),
+  notes: z.string().trim().max(240).optional(),
+});
+
+/**
+ * Edita uma corrida já lançada ("Editar Entrada" do mockup) — mesma regra da
+ * exclusão: só enquanto o turno dela está aberto. A data/hora (`occurred_at`)
+ * não muda por aqui, só os valores do lançamento.
+ */
+export async function atualizarGanho(_estado: FormState, formData: FormData): Promise<FormState> {
+  const parsed = edicaoGanhoSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return erroDeZod(parsed.error);
+
+  const supabase = await createClient();
+  const { data: linha } = await supabase
+    .from('shift_revenues')
+    .select('shift_id')
+    .eq('id', parsed.data.id)
+    .maybeSingle();
+  if (!linha) return { erro: 'Corrida não encontrada.' };
+
+  const { data: turno } = await supabase
+    .from('shifts')
+    .select('status')
+    .eq('id', linha.shift_id)
+    .maybeSingle();
+  if (turno?.status !== 'aberto') {
+    return { erro: 'Este turno não está mais aberto.' };
+  }
+
+  const { error } = await supabase
+    .from('shift_revenues')
+    .update({
+      category_id: parsed.data.category_id,
+      valor: parsed.data.valor,
+      qtd_corridas:
+        parsed.data.qtd_corridas !== null ? Math.round(parsed.data.qtd_corridas) : null,
+      km: parsed.data.km,
+      duracao_min: minutosDeHoras(parsed.data.horas_trabalhadas),
+      nota_passageiro: parsed.data.nota_passageiro,
+      notes: parsed.data.notes || null,
+    })
+    .eq('id', parsed.data.id);
+
+  if (error) return { erro: 'Não foi possível salvar as alterações.' };
+
+  revalidatePath('/app/turno');
+  revalidatePath(`/app/turno/corrida/${parsed.data.id}`);
+  redirect(`/app/turno/corrida/${parsed.data.id}`);
 }
 
 /** Remove uma corrida lançada por engano — só enquanto o turno está aberto. */
