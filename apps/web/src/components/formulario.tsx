@@ -49,6 +49,7 @@ export function CampoMoeda({
   required,
   valorInicial,
   autoFocus,
+  onValorChange,
 }: {
   label: string;
   name: string;
@@ -57,6 +58,10 @@ export function CampoMoeda({
   /** Valor inicial em reais (ex.: 18.5), para formulários de edição. */
   valorInicial?: number | null;
   autoFocus?: boolean;
+  /** Avisa o formulário do valor em reais a cada tecla — só quando alguém
+   * precisa calcular algo ao vivo (ex.: uma prévia de R$/km). Opcional: a
+   * maioria das telas não precisa saber o valor até o envio. */
+  onValorChange?: (valor: number | null) => void;
 }) {
   const id = `campo-${name}`;
   const [centavos, setCentavos] = useState<number | null>(
@@ -73,7 +78,9 @@ export function CampoMoeda({
 
   function aoDigitar(e: React.ChangeEvent<HTMLInputElement>) {
     const digitos = e.target.value.replace(/\D/g, '');
-    setCentavos(digitos === '' ? null : Number(digitos));
+    const novo = digitos === '' ? null : Number(digitos);
+    setCentavos(novo);
+    onValorChange?.(novo === null ? null : novo / 100);
   }
 
   return (
