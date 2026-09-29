@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { abrirTurnoAutomatico } from '@/lib/turnos/actions';
+import { abrirTurnoEIrParaGanho, turnoAbertoAgora } from '@/lib/turnos/actions';
 import { carregarContexto } from '@/lib/dados/contexto';
 import { dataLocal } from '@/lib/numeros';
 import { FormularioGanho } from './formulario';
@@ -13,17 +13,54 @@ export const metadata = { title: 'Adicionar ganho — Sobrou' };
 /**
  * Lançar uma corrida não pode depender de lembrar de apertar "Começar a
  * rodar" antes — quem esquece de abrir o turno não pode perder o registro da
- * viagem por isso. Sem turno aberto, esta tela abre um automaticamente (com
- * o último hodômetro conhecido) em vez de mandar a pessoa pra tela de
- * início; só cai de volta nela quando não há hodômetro nenhum pra usar como
- * ponto de partida seguro.
+ * viagem por isso. Sem turno aberto, esta tela mostra um botão pra abrir um
+ * automaticamente (com o último hodômetro conhecido) em vez de mandar a
+ * pessoa pra tela de início manual.
+ *
+ * A checagem aqui é só leitura — a abertura em si (`abrirTurnoEIrParaGanho`)
+ * roda como Server Action de verdade, disparada pelo toque no botão, nunca
+ * direto no corpo do render: `revalidatePath` não pode ser chamado durante o
+ * render de uma Server Component.
  */
-export default async function AdicionarGanhoPage() {
+export default async function AdicionarGanhoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ iniciado?: string }>;
+}) {
+  const { iniciado } = await searchParams;
   const supabase = await createClient();
   const ctx = await carregarContexto();
 
-  const turno = await abrirTurnoAutomatico();
-  if (!turno) redirect('/app/turno');
+  const shiftId = await turnoAbertoAgora();
+
+  if (!shiftId) {
+    const temHodometro =
+      ctx.veiculo && ctx.veiculo.odometro_atual !== null && ctx.veiculo.odometro_atual !== undefined;
+
+    if (!temHodometro) redirect('/app/turno');
+
+    return (
+      <>
+        <Link href="/app/turno" className="text-sm text-[var(--color-marca)]">
+          ← Turno
+        </Link>
+        <h1 className="mt-4 mb-1 text-xl font-bold">Adicionar ganho</h1>
+        <p className="mb-6 text-sm text-[var(--color-tinta-suave)]">
+          Você ainda não iniciou o turno de hoje. Iniciamos agora com o último hodômetro
+          conhecido — confira depois em Turno se está certo.
+        </p>
+        <form action={abrirTurnoEIrParaGanho}>
+          <button
+            type="submit"
+            className="w-full rounded-[var(--radius-cartao)] py-3 text-center text-base font-semibold text-white"
+            style={{ background: 'var(--color-marca)' }}
+          >
+            Começar a rodar e lançar corrida
+          </button>
+        </form>
+      </>
+    );
+  }
 
   const { data: plataformas } = await supabase
     .from('categories')
@@ -43,7 +80,7 @@ export default async function AdicionarGanhoPage() {
         Uma corrida por toque — o faturamento do dia se soma sozinho.
       </p>
 
-      {turno.iniciadoAgora && (
+      {iniciado === '1' && (
         <p
           className="mb-6 rounded-[var(--radius-cartao)] p-3 text-sm"
           style={{ background: 'var(--color-papel-suave)', color: 'var(--color-tinta-suave)' }}
@@ -54,7 +91,7 @@ export default async function AdicionarGanhoPage() {
       )}
 
       <FormularioGanho
-        shiftId={turno.id}
+        shiftId={shiftId}
         hoje={dataLocal(new Date(), ctx.timezone)}
         plataformas={(plataformas ?? []).map((p) => ({
           id: p.id,
