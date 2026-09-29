@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { abrirTurnoAutomatico } from '@/lib/turnos/actions';
+import { carregarContexto } from '@/lib/dados/contexto';
+import { dataLocal } from '@/lib/numeros';
 import { FormularioGanho } from './formulario';
 
 export const dynamic = 'force-dynamic';
@@ -18,6 +20,7 @@ export const metadata = { title: 'Adicionar ganho — Sobrou' };
  */
 export default async function AdicionarGanhoPage() {
   const supabase = await createClient();
+  const ctx = await carregarContexto();
 
   const turno = await abrirTurnoAutomatico();
   if (!turno) redirect('/app/turno');
@@ -52,6 +55,7 @@ export default async function AdicionarGanhoPage() {
 
       <FormularioGanho
         shiftId={turno.id}
+        hoje={dataLocal(new Date(), ctx.timezone)}
         plataformas={(plataformas ?? []).map((p) => ({
           id: p.id,
           name: p.name,
