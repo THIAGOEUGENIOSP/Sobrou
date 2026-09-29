@@ -29,7 +29,7 @@ export default async function DetalheCorridaPage({
 
   const { data: corrida } = await supabase
     .from('shift_revenues')
-    .select('id, shift_id, category_id, valor, qtd_corridas, occurred_at, km, duracao_min, nota_passageiro')
+    .select('id, shift_id, category_id, valor, qtd_corridas, occurred_at, km, duracao_min, nota_passageiro, notes')
     .eq('id', id)
     .maybeSingle();
 
@@ -103,7 +103,13 @@ export default async function DetalheCorridaPage({
         )}
       </dl>
 
-      {km === null && corrida.duracao_min === null && corrida.nota_passageiro === null && (
+      {corrida.notes && (
+        <p className="mt-4 rounded-[var(--radius-cartao)] p-4 text-sm" style={{ background: 'var(--color-papel-suave)' }}>
+          {corrida.notes}
+        </p>
+      )}
+
+      {km === null && corrida.duracao_min === null && corrida.nota_passageiro === null && !corrida.notes && (
         <p className="mt-4 text-sm text-[var(--color-tinta-suave)]">
           Essa corrida foi lançada sem km, duração ou nota — só o valor mesmo.
         </p>
