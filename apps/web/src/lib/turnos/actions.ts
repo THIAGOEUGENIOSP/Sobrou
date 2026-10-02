@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { fecharTurno, segundosTrabalhados, type ShiftRevenue } from '@sobrou/finance';
+import { fecharTurno, segundosEfetivos, segundosTrabalhados, type ShiftRevenue } from '@sobrou/finance';
 import { createClient, requireUser } from '@/lib/supabase/server';
 import { carregarContexto, parametrosDoTurno } from '@/lib/dados/contexto';
 import { erroDeZod, type FormState } from '@/lib/auth/schemas';
@@ -518,7 +518,7 @@ export async function finalizarTurno(
   // durante o turno — nada é reperguntado no fechamento.
   const { data: ganhos } = await supabase
     .from('shift_revenues')
-    .select('category_id, valor, qtd_corridas')
+    .select('category_id, valor, qtd_corridas, duracao_min')
     .eq('shift_id', turno.id);
 
   const porCategoria = new Map<string, { valor: number; qtdCorridas: number | null }>();
@@ -557,11 +557,12 @@ export async function finalizarTurno(
   // O relógio exclui o tempo em pausa: a hora inicial "efetiva" é empurrada
   // para frente pelo total pausado, sem alterar o `started_at` gravado (ele
   // continua servindo para o "Começou às HH:MM" em outras telas).
-  const segundosUteis = segundosTrabalhados(
-    turno.started_at,
-    fim,
-    Number(turno.paused_seconds ?? 0),
-    turno.paused_at,
+  // Se os ganhos lançados trazem o tempo online (resumo da plataforma), ele
+  // vale quando for maior que o relógio — ver `segundosEfetivos`.
+  const minutosInformados = (ganhos ?? []).reduce((a, g) => a + Number(g.duracao_min ?? 0), 0);
+  const segundosUteis = segundosEfetivos(
+    segundosTrabalhados(turno.started_at, fim, Number(turno.paused_seconds ?? 0), turno.paused_at),
+    minutosInformados,
   );
   const inicioEfetivo = new Date(fim.getTime() - segundosUteis * 1000);
 

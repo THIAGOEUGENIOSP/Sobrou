@@ -259,3 +259,12 @@ describe('segundosTrabalhados', () => {
     expect(s).toBe(0);
   });
 });
+
+describe('segundosEfetivos', () => {
+  it('usa o tempo informado quando o relógio marcou menos', async () => {
+    const { segundosEfetivos } = await import('../src/shift');
+    expect(segundosEfetivos(13 * 60, 141)).toBe(141 * 60);
+    expect(segundosEfetivos(5 * 3600, 141)).toBe(5 * 3600);
+    expect(segundosEfetivos(600, 0)).toBe(600);
+  });
+});

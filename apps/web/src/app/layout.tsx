@@ -26,7 +26,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        {/* Aplica o tema escolhido antes da primeira pintura, sem piscar. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('sobrou-tema');if(t==='claro'||(t==='sistema'&&matchMedia('(prefers-color-scheme: light)').matches))document.documentElement.dataset.tema='claro'}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-dvh antialiased">
         <RegistrarServiceWorker />
         {children}

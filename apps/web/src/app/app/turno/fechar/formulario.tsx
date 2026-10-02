@@ -9,6 +9,7 @@ import {
   formatLitros,
   formatMoney,
   formatRate,
+  segundosEfetivos,
   segundosTrabalhados,
   type AllocationConfig,
   type ShiftRevenue,
@@ -31,6 +32,7 @@ export function FormularioFecharTurno({
   iniciadoEm,
   pausedSeconds,
   pausedAt,
+  minutosInformados = 0,
   odoInicial,
   consumo,
   precoCombustivel,
@@ -43,6 +45,8 @@ export function FormularioFecharTurno({
   iniciadoEm: string;
   pausedSeconds: number;
   pausedAt: string | null;
+  /** Soma do tempo informado nos ganhos do turno, em minutos. */
+  minutosInformados?: number;
   odoInicial: number;
   consumo: number;
   precoCombustivel: number;
@@ -63,7 +67,10 @@ export function FormularioFecharTurno({
     if (receitas.length === 0) return null;
 
     const fim = new Date();
-    const segundosUteis = segundosTrabalhados(iniciadoEm, fim, pausedSeconds, pausedAt);
+    const segundosUteis = segundosEfetivos(
+      segundosTrabalhados(iniciadoEm, fim, pausedSeconds, pausedAt),
+      minutosInformados,
+    );
     const inicioEfetivo = new Date(fim.getTime() - segundosUteis * 1000);
 
     try {
@@ -90,6 +97,7 @@ export function FormularioFecharTurno({
     iniciadoEm,
     pausedSeconds,
     pausedAt,
+    minutosInformados,
     consumo,
     precoCombustivel,
     despesasDoTurno,

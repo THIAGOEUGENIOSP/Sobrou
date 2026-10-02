@@ -165,3 +165,15 @@ export function precoLitroImplicito(custo: number, litros: number): number | nul
   const r = safeDiv(custo, litros, 4);
   return r === null ? null : rate(r);
 }
+
+/**
+ * Horas que contam no turno: o relógio ou, se maior, a soma dos tempos
+ * informados nos ganhos lançados ("Online 2h21" do resumo da plataforma).
+ *
+ * Quem lança o resumo do dia de uma vez abre o turno no fim do expediente: o
+ * relógio marcaria minutos, e o R$/hora sairia dezenas de vezes maior que o
+ * real. O tempo informado pelo motorista é o que vale nesse caso.
+ */
+export function segundosEfetivos(segundosDoRelogio: number, minutosInformados: number): number {
+  return Math.max(Math.max(0, segundosDoRelogio), Math.max(0, minutosInformados) * 60);
+}

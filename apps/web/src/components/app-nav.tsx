@@ -23,6 +23,7 @@ const ITENS_PRINCIPAIS = [
  */
 type IconeMais = 'relatorios' | 'consultor' | 'metas' | 'reservas' | 'mensal' | 'posto' | 'historico';
 type RotaMais =
+  | '/app/meta'
   | '/app/relatorios'
   | '/app/consultor'
   | '/app/metas'
@@ -70,6 +71,12 @@ const GRUPOS_MAIS: GrupoMais[] = [
   {
     titulo: 'Planejamento',
     itens: [
+      {
+        href: '/app/meta',
+        rotulo: 'Meta do Mês',
+        subtitulo: 'Quanto falta hoje e no mês, projeção e lucro',
+        icone: 'metas',
+      },
       {
         href: '/app/metas',
         rotulo: 'Metas',

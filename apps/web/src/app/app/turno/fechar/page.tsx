@@ -23,7 +23,7 @@ export default async function FecharTurnoPage() {
   const [{ data: ganhos }, { data: despesas }, { data: categorias }] = await Promise.all([
     supabase
       .from('shift_revenues')
-      .select('category_id, valor, qtd_corridas')
+      .select('category_id, valor, qtd_corridas, duracao_min')
       .eq('shift_id', turno.id),
     supabase.from('transactions').select('valor').eq('shift_id', turno.id).eq('kind', 'despesa'),
     supabase.from('categories').select('id, name').is('archived_at', null),
@@ -63,6 +63,7 @@ export default async function FecharTurnoPage() {
         iniciadoEm={turno.started_at}
         pausedSeconds={Number(turno.paused_seconds ?? 0)}
         pausedAt={turno.paused_at}
+        minutosInformados={(ganhos ?? []).reduce((a, g) => a + Number(g.duracao_min ?? 0), 0)}
         odoInicial={Number(turno.odo_inicial)}
         consumo={Number(turno.consumo_usado ?? parametros.consumo)}
         precoCombustivel={Number(turno.preco_combustivel_usado ?? parametros.preco)}

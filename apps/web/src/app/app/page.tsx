@@ -19,6 +19,7 @@ import { can } from '@/lib/entitlements';
 import { createClient } from '@/lib/supabase/server';
 import { BotaoSino, LogoSobrou } from '@/components/cabecalho';
 import { Confirmacao } from '@/components/confirmacao';
+import { CartaoMetaHojePainel } from '@/app/app/meta/cartao-painel';
 
 export const dynamic = 'force-dynamic';
 
@@ -173,6 +174,8 @@ export default async function DashboardPage({
         {primeiroNome ? `${saudacaoPorHora(horaLocal)}, ${primeiroNome}` : saudacaoPorHora(horaLocal)}
       </p>
       <h1 className="mb-4 text-2xl font-bold">Vamos pra cima hoje? 🚀</h1>
+
+      {podeUsarMetas && <CartaoMetaHojePainel ctx={ctx} />}
 
       {turnoAberto ? (
         <Link

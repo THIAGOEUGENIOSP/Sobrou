@@ -270,6 +270,30 @@ export type Database = {
         }
         Relationships: []
       }
+      day_targets: {
+        Row: {
+          created_at: string
+          target_value: number
+          updated_at: string
+          user_id: string
+          work_date: string
+        }
+        Insert: {
+          created_at?: string
+          target_value: number
+          updated_at?: string
+          user_id?: string
+          work_date: string
+        }
+        Update: {
+          created_at?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+          work_date?: string
+        }
+        Relationships: []
+      }
       device_tokens: {
         Row: {
           created_at: string
@@ -541,6 +565,84 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      meta_settings: {
+        Row: {
+          created_at: string
+          custo_manutencao_km: number | null
+          custo_outros_km: number
+          custo_pneus_km: number
+          custo_revisao_km: number
+          liq_h_verde: number
+          liq_h_vermelho: number
+          rs_h_verde: number
+          rs_h_vermelho: number
+          rs_km_verde: number
+          rs_km_vermelho: number
+          updated_at: string
+          user_id: string
+          work_weekdays: number[]
+        }
+        Insert: {
+          created_at?: string
+          custo_manutencao_km?: number | null
+          custo_outros_km?: number
+          custo_pneus_km?: number
+          custo_revisao_km?: number
+          liq_h_verde?: number
+          liq_h_vermelho?: number
+          rs_h_verde?: number
+          rs_h_vermelho?: number
+          rs_km_verde?: number
+          rs_km_vermelho?: number
+          updated_at?: string
+          user_id?: string
+          work_weekdays?: number[]
+        }
+        Update: {
+          created_at?: string
+          custo_manutencao_km?: number | null
+          custo_outros_km?: number
+          custo_pneus_km?: number
+          custo_revisao_km?: number
+          liq_h_verde?: number
+          liq_h_vermelho?: number
+          rs_h_verde?: number
+          rs_h_vermelho?: number
+          rs_km_verde?: number
+          rs_km_vermelho?: number
+          updated_at?: string
+          user_id?: string
+          work_weekdays?: number[]
+        }
+        Relationships: []
+      }
+      month_targets: {
+        Row: {
+          created_at: string
+          id: string
+          month: string
+          target_value: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: string
+          target_value: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: string
+          target_value?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       plan_entitlements: {
         Row: {
@@ -1519,6 +1621,25 @@ export type Database = {
       limpar_rate_limits: { Args: never; Returns: number }
       money_round: { Args: { v: number }; Returns: number }
       plan_limit: { Args: { p_feature: string }; Returns: number }
+      registrar_sessao: {
+        Args: {
+          p_allocation_config_id: string
+          p_consumo: number
+          p_creditos?: Json
+          p_ended_at: string
+          p_fuel_kind: Database["public"]["Enums"]["fuel_kind"]
+          p_notes?: string
+          p_odo_final: number
+          p_odo_inicial: number
+          p_preco_combustivel: number
+          p_receita: Json
+          p_snapshot: Json
+          p_started_at: string
+          p_vehicle_id: string
+          p_work_date: string
+        }
+        Returns: string
+      }
       reserve_balance: {
         Args: { p_kind: Database["public"]["Enums"]["reserve_kind"] }
         Returns: number

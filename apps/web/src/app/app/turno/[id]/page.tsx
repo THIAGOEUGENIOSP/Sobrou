@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Route } from 'next';
 import { notFound } from 'next/navigation';
 import {
   formatConsumo,
@@ -11,6 +12,10 @@ import {
 } from '@sobrou/finance';
 import { createClient } from '@/lib/supabase/server';
 import { ExcluirTurno } from '@/app/app/turno/historico/excluir-turno';
+import { BlocoResumo } from '@/app/app/meta/resumo/bloco';
+import { carregarContexto } from '@/lib/dados/contexto';
+import { carregarResumoDia } from '@/lib/meta/dados';
+import { can } from '@/lib/entitlements';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +51,10 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
   const custoCombustivel = Number(turno.snap_custo_combustivel ?? 0);
   const disponivel = Number(turno.snap_disponivel ?? 0);
   const prejuizo = disponivel < 0;
+
+  // Meta do Mês: depois de encerrar, o resumo já mostra a meta do dia, o
+  // progresso do mês e a meta recalculada do próximo dia de trabalho.
+  const resumoMeta = (await can('goals')) ? await carregarResumoDia(await carregarContexto(), turno.work_date) : null;
 
   return (
     <>
@@ -124,6 +133,16 @@ export default async function ResumoTurnoPage({ params }: { params: Promise<{ id
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {resumoMeta && (resumoMeta.meta || resumoMeta.alvo !== null) && (
+        <section className="mb-2">
+          <h2 className="mb-3 font-semibold">Meta</h2>
+          <BlocoResumo r={resumoMeta} compacto />
+          <Link href={`/app/meta/resumo?data=${turno.work_date}` as Route} className="mb-6 block text-sm text-[var(--color-marca)]">
+            Resumo completo do dia →
+          </Link>
         </section>
       )}
 

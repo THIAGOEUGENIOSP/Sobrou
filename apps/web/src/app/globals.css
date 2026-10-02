@@ -141,3 +141,35 @@ button:active {
     transform: none;
   }
 }
+
+/*
+ * Modo claro (opcional). O escuro continua sendo o padrão e o desenho de
+ * referência; o claro é escolha do motorista (Meta do Mês → Configurar → Tema)
+ * para quem roda de dia com sol na tela. Só troca os tokens — nenhuma tela
+ * precisa saber qual tema está ativo.
+ */
+html[data-tema='claro'] {
+  color-scheme: light;
+  --color-tinta: #12161c;
+  --color-tinta-suave: #5a6371;
+  --color-tinta-fraca: #7b8390;
+  --color-papel: #f3f4f6;
+  --color-papel-suave: #e8ebef;
+  --color-papel-elevado: #ffffff;
+  --color-papel-secundario: #eceef2;
+  --color-borda: rgba(15, 23, 42, 0.12);
+  --color-marca: #e2501f;
+  --color-marca-forte: #cf4415;
+  --color-marca-suave: #fde8df;
+  --color-aviso: #a86b0c;
+  --color-aviso-suave: #fbefd6;
+  --color-alerta: #cf2f3a;
+  --color-alerta-suave: #fde3e5;
+  --color-positivo: #0f7f55;
+  --color-positivo-suave: #daf2e7;
+  --color-info: #1f62c4;
+  --color-info-suave: #e0ebfb;
+  --color-margem: #5f4fd6;
+  --color-margem-suave: #ebe8fc;
+  --sombra-cartao: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 28px -18px rgba(15, 23, 42, 0.25);
+}

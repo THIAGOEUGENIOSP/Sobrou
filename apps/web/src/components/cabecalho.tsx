@@ -47,7 +47,7 @@ export function BotaoAjustes() {
       href="/app/ajustes"
       aria-label="Ajustes"
       className="flex h-9 w-9 flex-none items-center justify-center rounded-full"
-      style={{ color: '#F5F6FA' }}
+      style={{ color: 'var(--color-tinta)' }}
     >
       <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="3" />

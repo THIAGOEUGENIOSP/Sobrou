@@ -21,3 +21,5 @@ export * from './period';
 export * from './periodo';
 export * from './closing';
 export * from './format';
+export * from './meta';
+export * from './print';

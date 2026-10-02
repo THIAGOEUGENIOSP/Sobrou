@@ -107,6 +107,22 @@ usuário nem valor financeiro individual.
 
 ---
 
+### Meta do Mês (`/app/meta`)
+
+Meta de faturamento por mês, meta de hoje em contagem regressiva, Modo Corrida,
+registro de sessão já encerrada (com leitura de print no próprio celular),
+projeção com cenários ±15%, lucro real estimado e faróis configuráveis.
+
+- Fórmulas em `packages/finance/src/meta.ts` (testadas em `test/meta.test.ts`);
+  leitura de print em `print.ts`.
+- Dados em `apps/web/src/lib/meta/` — o turno aberto entra ao vivo, os
+  fechados vêm dos snapshots.
+- Meta de hoje automática = o que faltava no início do dia ÷ dias de trabalho
+  restantes (contando hoje). Excedente e déficit se redistribuem sozinhos.
+- Horas do turno: vale o tempo informado nos ganhos ("Online 2h21") quando ele
+  é maior que o relógio (`segundosEfetivos`).
+- Tema claro é opcional (Meta do Mês → Configurar → Tema); o escuro segue padrão.
+
 ## Planos e limites
 
 Tudo passa por uma função só: `can('feature')` e `plan_limit('feature')`, que
